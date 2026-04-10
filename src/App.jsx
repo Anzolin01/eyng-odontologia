@@ -119,45 +119,7 @@ const PATIENTS = [
   },
 ];
 
-// ── PROMPT PARA A IA ──
-const buildSystemPrompt = (patient) => `Você é um assistente clínico para um consultório odontológico brasileiro.
-Recebe a transcrição de um registro por voz feito pela dentista após um atendimento.
-Sua função é extrair e estruturar as informações em JSON válido.
-
-Contexto do paciente:
-- Nome: ${patient.name}
-- Alergias registradas: ${patient.allergies.length > 0 ? patient.allergies.join(", ") : "nenhuma"}
-- Tratamento atual: ${patient.treatment}
-- Notas inteligentes existentes: ${patient.notes.map(n => n.text).join(" | ") || "nenhuma"}
-
-Extraia do texto e responda APENAS com JSON válido, sem markdown, sem explicação:
-
-{
-  "procedimento": {
-    "descricao": "descrição profissional e clara do que foi feito, incluindo observações clínicas",
-    "prof": "${patient.professional}"
-  },
-  "retorno": {
-    "prazo_texto": "como a dentista disse (ex: 6 semanas, 1 mês)",
-    "semanas": número_de_semanas_ou_null,
-    "observacao": "observação sobre o retorno se houver"
-  },
-  "orientacao_paciente": {
-    "texto": "orientações em linguagem acessível para enviar ao paciente",
-    "alerta_alergia": true_ou_false,
-    "alergia_mencionada": "nome do medicamento se houver conflito ou null"
-  },
-  "novas_preferencias": [
-    { "tipo": "preference", "texto": "texto da preferência detectada" }
-  ],
-  "alertas_ia": ["alertas importantes se houver"]
-}
-
-Se não houver retorno mencionado, retorno.prazo_texto = null e retorno.semanas = null.
-Se não houver orientações, orientacao_paciente.texto = null.
-Se não houver novas preferências, novas_preferencias = [].
-Se não houver alertas, alertas_ia = [].
-Cruze com as alergias registradas — se mencionar medicamento com alergia registrada, alerte.`;
+// ── PROMPT PARA A IA (via Netlify Function) ──
 
 // ── ESTILOS COMPARTILHADOS ──
 const inputSt = {
@@ -424,21 +386,22 @@ function VoiceModule({ patient, onSave, onClose }) {
   const processTranscript = async (text) => {
     setStage("processing");
     try {
-      const systemPrompt = buildSystemPrompt(patient);
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const response = await fetch("/.netlify/functions/interpret-voice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: systemPrompt,
-          messages: [{ role: "user", content: `Transcrição da dentista após atendimento de ${patient.name}:\n\n"${text}"\n\nData de hoje: ${todayISO()}` }],
+          transcript: `Transcrição da dentista após atendimento de ${patient.name}:\n\n"${text}"\n\nData de hoje: ${todayISO()}`,
+          patientContext: {
+            name: patient.name,
+            allergies: patient.allergies,
+            treatment: patient.treatment,
+            notes: patient.notes,
+            professional: patient.professional,
+          },
         }),
       });
-      const data = await response.json();
-      const raw = data.content?.[0]?.text || "";
-      const cleaned = raw.replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(cleaned);
+      if (!response.ok) throw new Error("Function error");
+      const parsed = await response.json();
 
       // Calcular data de retorno se houver semanas
       if (parsed.retorno?.semanas) {
