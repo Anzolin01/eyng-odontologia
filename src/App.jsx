@@ -330,60 +330,67 @@ function VoiceModule({ patient, onSave, onClose }) {
 
   const recognitionRef = useRef(null);
   const transcriptRef = useRef("");
+  const isRecordingRef = useRef(false);
 
   // ── GRAVAÇÃO ──
   const startRecording = useCallback(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setStage("fallback");
-      return;
-    }
-    const rec = new SpeechRecognition();
-    rec.lang = "pt-BR";
-    rec.continuous = true;
-    rec.interimResults = true;
+    if (!SpeechRecognition) { setStage("fallback"); return; }
+
     transcriptRef.current = "";
-
-    rec.onresult = (e) => {
-      let newFinal = "";
-      let interim = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) {
-          newFinal += e.results[i][0].transcript + " ";
-        } else {
-          interim += e.results[i][0].transcript;
-        }
-      }
-      if (newFinal) {
-        transcriptRef.current += newFinal;
-      }
-      setTranscript(transcriptRef.current);
-      setInterimText(interim);
-    };
-    rec.onerror = (e) => {
-      if (e.error === "not-allowed") {
-        setErrorMsg("Permita o acesso ao microfone nas configurações do navegador.");
-        setStage("error");
-      }
-    };
-    rec.onend = () => { if (stage === "recording") setInterimText(""); };
-
-    recognitionRef.current = rec;
-    rec.start();
-    setStage("recording");
     setTranscript("");
     setInterimText("");
-  }, [stage]);
+    setStage("recording");
+    isRecordingRef.current = true;
+
+    const startRec = () => {
+      const rec = new SpeechRecognition();
+      rec.lang = "pt-BR";
+      rec.continuous = false;
+      rec.interimResults = true;
+      rec.maxAlternatives = 1;
+
+      rec.onresult = (e) => {
+        let interim = "";
+        for (let i = 0; i < e.results.length; i++) {
+          if (e.results[i].isFinal) {
+            transcriptRef.current += e.results[i][0].transcript + " ";
+            setTranscript(transcriptRef.current);
+            setInterimText("");
+          } else {
+            interim += e.results[i][0].transcript;
+            setInterimText(interim);
+          }
+        }
+      };
+
+      rec.onerror = (e) => {
+        if (e.error === "not-allowed") {
+          setErrorMsg("Permita o acesso ao microfone.");
+          setStage("error");
+        }
+      };
+
+      rec.onend = () => {
+        if (isRecordingRef.current) startRec();
+      };
+
+      recognitionRef.current = rec;
+      rec.start();
+    };
+
+    startRec();
+  }, []);
 
   const stopRecording = useCallback(() => {
+    isRecordingRef.current = false;
     if (recognitionRef.current) recognitionRef.current.stop();
     const finalText = transcriptRef.current.trim();
-    if (!finalText || finalText.length < 10) {
+    if (!finalText || finalText.length < 5) {
       setErrorMsg("Não captei nada. Tente novamente.");
       setStage("error");
       return;
     }
-    setTranscript(finalText);
     processTranscript(finalText);
   }, []);
 
