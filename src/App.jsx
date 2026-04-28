@@ -545,7 +545,7 @@ function PatientCard({ p, onClick, index, onContact, onReturn }) {
         <BTN small label="WhatsApp" icon="💬" color="#25D366" onClick={() => window.open(`https://wa.me/55${p.phone.replace(/\D/g, "")}?text=Olá ${p.name.split(" ")[0]}, tudo bem? Entramos em contato para agendar seu retorno na Eyng Odontologia 😊`)} />
         <BTN small label="Ligar" icon="📞" color="#0EA5E9" onClick={() => window.open(`tel:${p.phone.replace(/\D/g, "")}`)} />
         {onContact && <BTN small label="Contato" icon="📋" color="#7C3AED" onClick={onContact} />}
-        <span style={{ opacity: 0.5, cursor: "not-allowed" }}><BTN small label="Em breve" icon="📅" color="#94a3b8" bg="#f1f5f9" onClick={() => {}} /></span>
+        <span title="Em breve" style={{ opacity: 0.5, cursor: "not-allowed" }}><BTN small label="Agendar" icon="📅" color="#94a3b8" bg="#f1f5f9" onClick={() => {}} /></span>
         <BTN small label="Ver ficha →" icon="" color="#64748b" bg="#e2e8f0" onClick={onClick} />
       </div>
     </div>
@@ -935,10 +935,9 @@ export default function App() {
             { v: overdueCount, l: "Atrasados", c: "#EF4444", icon: "⏰" },
             { v: pendingCount, l: "Pendências", c: "#F59E0B", icon: "💰" },
           ].map((s, i) => (
-            <div key={i} style={{ background: "rgba(255,255,255,0.95)", borderRadius: 12, padding: "7px 6px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
-              <div style={{ fontSize: 14, marginBottom: 1 }}>{s.icon}</div>
-              <div style={{ fontSize: 17, fontWeight: 900, color: s.c, lineHeight: 1, fontFamily: "'Nunito',sans-serif" }}>{s.v}</div>
-              <div style={{ fontSize: 8, color: "#94a3b8", fontWeight: 700, letterSpacing: 0.5, marginTop: 2 }}>{s.l.toUpperCase()}</div>
+            <div key={i} style={{ background: "rgba(255,255,255,0.95)", borderRadius: 12, padding: "6px 8px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08)", maxHeight: 60 }}>
+              <div style={{ fontSize: 20, fontWeight: 900, color: s.c, lineHeight: 1, fontFamily: "'Nunito',sans-serif" }}>{s.v}</div>
+              <div style={{ fontSize: 9, color: "#94a3b8", fontWeight: 700, letterSpacing: 0.5, marginTop: 3 }}>{s.l.toUpperCase()}</div>
             </div>
           ))}
         </div>
