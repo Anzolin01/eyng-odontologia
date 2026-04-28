@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
 export const supabase = createClient(
   'https://swwxrybldjfhicdurnch.supabase.co',
-  'sb_publishable_cBPr7aJre3c2Hd9eVw0Hqw_1a_TNAfx'
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3d3hyeWJsZGpmaGljZHVybmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNzAzMzMsImV4cCI6MjA5Mjk0NjMzM30.ba1232EYersCtHILmSm5pv4Sb6fgtMUuaNyDC07AjDY'
 )
