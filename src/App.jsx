@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { supabase } from "./supabase";
 
 const G = {
   gold: "#c9a84c", goldL: "#e8d5a0", goldD: "#a07d2e",
@@ -1074,23 +1075,45 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
 
 // ── APP PRINCIPAL ──
 export default function App() {
-  const [patients, setPatients] = useState(PATIENTS);
+  const [patients, setPatients] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [view, setView] = useState("painel");
   const [selected, setSelected] = useState(null);
   const [splash, setSplash] = useState(true);
   const [modalNovo, setModalNovo] = useState(false);
 
-  useEffect(() => { const t = setTimeout(() => setSplash(false), 2400); return () => clearTimeout(t); }, []);
+  // Carrega pacientes do Supabase
+  useEffect(() => {
+    const load = async () => {
+      const { data, error } = await supabase.from('patients').select('*');
+      if (!error && data) {
+        const mapped = data.map(row => ({ ...row.data, supabaseId: row.id }));
+        setPatients(mapped);
+      } else {
+        // Fallback para dados locais se Supabase falhar
+        setPatients(PATIENTS);
+      }
+      setLoading(false);
+    };
+    load();
+    const t = setTimeout(() => setSplash(false), 2400);
+    return () => clearTimeout(t);
+  }, []);
 
-  const updatePatient = u => {
+  const updatePatient = async (u) => {
     setPatients(ps => ps.map(p => p.id === u.id ? u : p));
     if (selected?.id === u.id) setSelected(u);
+    // Persiste no Supabase
+    if (u.supabaseId) {
+      const { supabaseId, ...data } = u;
+      await supabase.from('patients').update({ data }).eq('id', supabaseId);
+    }
   };
 
   const overdueCount = patients.filter(p => p.returnStatus === "overdue" || p.returnStatus === "due_today").length;
   const pendingCount = patients.filter(p => p.financialStatus === "Pendente").length;
 
-  if (splash) return (
+  if (splash || loading) return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: G.black }}>
       <style>{css}</style>
       <div style={{ textAlign: "center", animation: "fadeInUp .8s ease" }}>
@@ -1156,7 +1179,15 @@ export default function App() {
         CAMADA DE AUTOMAÇÃO PARA SERVIÇOS DE SAÚDE · DADOS FICTÍCIOS — DEMONSTRAÇÃO
       </div>
 
-      {modalNovo && <ModalNovoPaciente onSave={p => { setPatients(ps => [...ps, p]); setModalNovo(false); }} onClose={() => setModalNovo(false)} />}
+      {modalNovo && <ModalNovoPaciente onSave={async p => {
+        const { data, error } = await supabase.from('patients').insert({ data: p }).select();
+        if (!error && data?.[0]) {
+          setPatients(ps => [...ps, { ...p, supabaseId: data[0].id }]);
+        } else {
+          setPatients(ps => [...ps, p]);
+        }
+        setModalNovo(false);
+      }} onClose={() => setModalNovo(false)} />}
     </div>
   );
 }
