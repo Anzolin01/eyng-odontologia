@@ -1086,8 +1086,13 @@ export default function App() {
   useEffect(() => {
     const load = async () => {
       const { data, error } = await supabase.from('patients').select('*');
+      console.log('[Supabase] result:', { data, error });
       if (!error && data) {
-        const mapped = data.map(row => ({ ...row.data, supabaseId: row.id }));
+        const mapped = data.map(row => {
+          console.log('[Supabase] row:', row);
+          return { ...row.data, supabaseId: row.id };
+        });
+        console.log('[Supabase] mapped patients:', mapped);
         setPatients(mapped);
       } else {
         // Fallback para dados locais se Supabase falhar
