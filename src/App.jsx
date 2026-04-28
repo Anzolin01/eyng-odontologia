@@ -1073,6 +1073,70 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
   );
 }
 
+// ── LOGIN ──
+const isDev = window.location.hostname === 'localhost';
+
+function LoginScreen({ onLogin }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+    if (err) setError("E-mail ou senha inválidos.");
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: G.black }}>
+      <style>{css}</style>
+      <div style={{ width: "100%", maxWidth: 360, padding: "0 24px" }}>
+        <div style={{ textAlign: "center", marginBottom: 40 }}>
+          <div style={{ width: 54, height: 54, border: `1.5px solid ${G.gold}`, transform: "rotate(45deg)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+            <span style={{ transform: "rotate(-45deg)", color: G.gold, fontSize: 18, fontFamily: "'Cormorant Garamond',serif", fontWeight: 300 }}>E</span>
+          </div>
+          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 26, color: G.white, letterSpacing: 8, fontWeight: 300 }}>EYNG</div>
+          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 10, color: G.gold, letterSpacing: 5, marginTop: 3 }}>ODONTOLOGIA</div>
+        </div>
+
+        <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <input
+            type="email"
+            placeholder="E-mail"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+            style={{ background: "#1a1a1a", border: `1px solid ${G.g200}`, borderRadius: 8, padding: "12px 16px", color: G.white, fontSize: 14, outline: "none", fontFamily: "inherit" }}
+          />
+          <input
+            type="password"
+            placeholder="Senha"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required
+            style={{ background: "#1a1a1a", border: `1px solid ${G.g200}`, borderRadius: 8, padding: "12px 16px", color: G.white, fontSize: 14, outline: "none", fontFamily: "inherit" }}
+          />
+          {error && <div style={{ color: "#ff8a80", fontSize: 12, textAlign: "center" }}>{error}</div>}
+          <button
+            type="submit"
+            disabled={loading}
+            style={{ background: G.gold, color: G.black, border: "none", borderRadius: 8, padding: "13px", fontSize: 13, fontWeight: 700, fontFamily: "'Cormorant Garamond',serif", letterSpacing: 3, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, marginTop: 4 }}
+          >
+            {loading ? "ENTRANDO..." : "ENTRAR"}
+          </button>
+        </form>
+
+        <div style={{ marginTop: 40, height: 1, background: `linear-gradient(90deg,transparent,${G.gold}44,transparent)` }} />
+        <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 9, color: G.g500, marginTop: 14, letterSpacing: 2, textAlign: "center" }}>PLATAFORMA DE GESTÃO INTELIGENTE</div>
+      </div>
+    </div>
+  );
+}
+
 // ── APP PRINCIPAL ──
 export default function App() {
   const [patients, setPatients] = useState([]);
@@ -1081,6 +1145,21 @@ export default function App() {
   const [selected, setSelected] = useState(null);
   const [splash, setSplash] = useState(true);
   const [modalNovo, setModalNovo] = useState(false);
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(!isDev);
+
+  // Auth
+  useEffect(() => {
+    if (isDev) return;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Carrega pacientes do Supabase
   useEffect(() => {
@@ -1118,6 +1197,12 @@ export default function App() {
   const overdueCount = patients.filter(p => p.returnStatus === "overdue" || p.returnStatus === "due_today").length;
   const pendingCount = patients.filter(p => p.financialStatus === "Pendente").length;
 
+  if (authLoading) return (
+    <div style={{ minHeight: "100vh", background: G.black }} />
+  );
+
+  if (!isDev && !user) return <LoginScreen />;
+
   if (splash || loading) return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: G.black }}>
       <style>{css}</style>
@@ -1152,6 +1237,7 @@ export default function App() {
           {overdueCount > 0 && <div style={{ background: `${G.red}22`, color: "#ff8a80", padding: "3px 10px", borderRadius: 14, fontSize: 10, fontWeight: 700 }}>{overdueCount} atrasados</div>}
           {pendingCount > 0 && <div style={{ background: `${G.orange}22`, color: G.orange, padding: "3px 10px", borderRadius: 14, fontSize: 10, fontWeight: 700 }}>{pendingCount} pendências</div>}
           <div style={{ color: G.g500, fontSize: 10, fontFamily: "'Cormorant Garamond',serif" }}>10/04/2026</div>
+          {!isDev && <button onClick={() => supabase.auth.signOut()} style={{ background: "none", border: `1px solid ${G.g200}`, borderRadius: 6, padding: "4px 10px", color: G.g500, fontSize: 10, cursor: "pointer", fontFamily: "'Cormorant Garamond',serif", letterSpacing: 1 }}>SAIR</button>}
         </div>
       </div>
 
