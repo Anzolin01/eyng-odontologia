@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "./supabase";
+import Odontograma2D from "./Odontograma2D";
 
 // ── TEMA CLÁSSICO (modais / detalhe) ──
 const G = {
@@ -701,7 +702,7 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
-        {[["prontuario", "📋 Prontuário"], ["historico", `📅 Histórico (${p.procedures.length})`], ["notas", `💡 Notas (${p.notes.length})`], ["contatos", `📞 Contatos (${p.contactLog.length})`]].map(([id, label]) => (
+        {[["prontuario", "📋 Prontuário"], ["historico", `📅 Histórico (${p.procedures.length})`], ["notas", `💡 Notas (${p.notes.length})`], ["contatos", `📞 Contatos (${p.contactLog.length})`], ["odontograma", "🦷 Odontograma"]].map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)} style={{ flex: 1, padding: "10px 6px", borderRadius: 14, border: "none", cursor: "pointer", background: tab === id ? `linear-gradient(135deg,${sp.from},${sp.to})` : "#f1f5f9", color: tab === id ? "#fff" : "#64748b", fontSize: 11, fontWeight: 700, fontFamily: "'Nunito',sans-serif", boxShadow: tab === id ? `0 4px 16px ${sp.from}44` : "none", transition: "all 0.2s" }}>{label}</button>
         ))}
       </div>
@@ -787,6 +788,16 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {tab === "odontograma" && (
+        <div style={{ animation: "fadeIn 0.3s ease" }}>
+          <Odontograma2D
+            patientName={p.name}
+            initialData={p.odontograma || {}}
+            onSave={(data) => save({ ...p, odontograma: data })}
+          />
         </div>
       )}
 
