@@ -719,7 +719,7 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
           ["contatos",    p4, "Contatos",    "FELIZ"   ],
           ["odontograma", p5, "Odontograma", "DENGOSO" ],
           ["financeiro",  p6, "Financeiro",  "ZANGADO" ],
-          ["voz",         p7, "Voz / IA",    "DUNGA"   ],
+          ["arquivos",    p7, "Arquivos",    "TÍMIDO"  ],
         ].map(([id, img, label, dwarf]) => (
           <button key={id} onClick={() => setTab(id)} style={{
             flex: "1 1 0", minWidth: 100, padding: "12px 8px 10px",
@@ -841,14 +841,9 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
         </div>
       )}
 
-      {tab === "voz" && (
-        <div style={{ animation: "fadeIn 0.3s ease", background: "#fff", borderRadius: 16, padding: 18, boxShadow: "0 2px 12px rgba(196,95,130,0.1)" }}>
-          <div style={{ fontSize: 10, color: "#c45f82", fontWeight: 800, marginBottom: 12, letterSpacing: 1 }}>🤐 DUNGA · REGISTRAR POR VOZ</div>
-          <VoiceModule
-            patient={p}
-            onSave={updated => { save(updated); setTab("prontuario"); }}
-            onClose={() => setTab("prontuario")}
-          />
+      {tab === "arquivos" && (
+        <div style={{ animation: "fadeIn 0.3s ease" }}>
+          <AbaArquivos patient={p} onSave={save} />
         </div>
       )}
 
@@ -862,6 +857,160 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
         <Modal title="🎙 Registrar por Voz" onClose={() => setVoiceOpen(false)} width={500}>
           <VoiceModule patient={p} onSave={updated => { save(updated); setVoiceOpen(false); }} onClose={() => setVoiceOpen(false)} />
         </Modal>
+      )}
+    </div>
+  );
+}
+
+// ── ABA ARQUIVOS ──
+const TIPOS_ARQUIVO = {
+  foto:  { icon: "📸", label: "Foto clínica",   cor: "#ec4899" },
+  exame: { icon: "📄", label: "Exame / Laudo",  cor: "#0ea5e9" },
+  stl:   { icon: "🦷", label: "Arquivo 3D (STL)", cor: "#8b5cf6" },
+  outro: { icon: "📎", label: "Outro",           cor: "#64748b" },
+};
+
+// Fotos ilustrativas enquanto Google Drive não está conectado
+const FOTOS_DEMO = [
+  { id: "d1", tipo: "foto", nome: "Frontal sorriso", url: "https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=400&q=80", data: "2026-03-28", obs: "Pré-tratamento" },
+  { id: "d2", tipo: "foto", nome: "Lateral direita", url: "https://images.unsplash.com/photo-1588776814546-1ffbb5ecd33e?w=400&q=80", data: "2026-03-28", obs: "" },
+  { id: "d3", tipo: "exame", nome: "Raio-X panorâmico", url: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&q=80", data: "2026-02-10", obs: "Empresa TotalDent" },
+];
+
+function AbaArquivos({ patient, onSave }) {
+  const arquivos = patient.arquivos || FOTOS_DEMO;
+  const [modalAdd, setModalAdd] = useState(false);
+  const [preview, setPreview]   = useState(null);
+  const [form, setForm]         = useState({ tipo:"foto", nome:"", url:"", obs:"" });
+
+  const salvarArquivo = () => {
+    if (!form.nome || !form.url) return;
+    const novo = { id: uid(), ...form, data: todayISO() };
+    onSave({ ...patient, arquivos: [novo, ...arquivos] });
+    setModalAdd(false);
+    setForm({ tipo:"foto", nome:"", url:"", obs:"" });
+  };
+
+  const remover = (id) => onSave({ ...patient, arquivos: arquivos.filter(a => a.id !== id) });
+
+  const porData = arquivos.reduce((acc, a) => {
+    const d = a.data || "sem data";
+    if (!acc[d]) acc[d] = [];
+    acc[d].push(a);
+    return acc;
+  }, {});
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
+        <div>
+          <div style={{ fontSize:10, color:"#c45f82", fontWeight:800, letterSpacing:1 }}>😶 TÍMIDO · ARQUIVOS DO PACIENTE</div>
+          <div style={{ fontSize:12, color:G.g500, marginTop:2 }}>{arquivos.length} arquivo{arquivos.length!==1?"s":""} · fotos, exames, documentos</div>
+        </div>
+        <button onClick={()=>setModalAdd(true)} style={btnPrim}>+ Adicionar arquivo</button>
+      </div>
+
+      {/* Aviso Google Drive */}
+      <div style={{ background:"#fff8e1", border:"1px solid #fcd34d", borderRadius:12, padding:"10px 14px", marginBottom:18, display:"flex", gap:10, alignItems:"flex-start" }}>
+        <span style={{ fontSize:18 }}>💡</span>
+        <div>
+          <div style={{ fontSize:12, fontWeight:800, color:"#92400e", marginBottom:2 }}>Integração Google Drive — em breve</div>
+          <div style={{ fontSize:11, color:"#a16207", lineHeight:1.6 }}>
+            Em breve os arquivos serão enviados direto daqui para uma pasta do Google Drive da clínica, organizados por paciente e data. Por enquanto cole o link do arquivo.
+          </div>
+        </div>
+      </div>
+
+      {/* Arquivos por data */}
+      {Object.entries(porData).sort(([a],[b])=>b.localeCompare(a)).map(([data, items]) => (
+        <div key={data} style={{ marginBottom:20 }}>
+          <div style={{ fontSize:11, fontWeight:800, color:G.g500, letterSpacing:0.8, marginBottom:10 }}>
+            📅 {fmtDate(data)}
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:10 }}>
+            {items.map(a => {
+              const t = TIPOS_ARQUIVO[a.tipo] || TIPOS_ARQUIVO.outro;
+              const isImg = a.url.match(/\.(jpg|jpeg|png|webp|gif)/i) || a.url.includes("unsplash") || a.url.includes("images");
+              return (
+                <div key={a.id} style={{ background:"#fff", borderRadius:14, overflow:"hidden", boxShadow:"0 2px 10px rgba(0,0,0,0.08)", cursor:"pointer", transition:"all .2s" }}
+                  onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
+                  onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
+                  {/* Thumbnail */}
+                  <div onClick={()=>setPreview(a)} style={{ width:"100%", height:110, background:isImg?"#f1f5f9":`${t.cor}15`, display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden" }}>
+                    {isImg
+                      ? <img src={a.url} alt={a.nome} style={{ width:"100%", height:"100%", objectFit:"cover" }} onError={e=>{ e.target.style.display="none"; }}/>
+                      : <span style={{ fontSize:40 }}>{t.icon}</span>
+                    }
+                  </div>
+                  {/* Info */}
+                  <div style={{ padding:"8px 10px" }}>
+                    <div style={{ fontSize:11, fontWeight:800, color:G.black, lineHeight:1.3, marginBottom:3 }}>{a.nome}</div>
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                      <span style={{ fontSize:9, fontWeight:700, color:t.cor, background:`${t.cor}15`, borderRadius:6, padding:"2px 6px" }}>{t.icon} {t.label}</span>
+                      <button onClick={()=>remover(a.id)} style={{ background:"none", border:"none", color:G.g300, cursor:"pointer", fontSize:14, lineHeight:1 }}>×</button>
+                    </div>
+                    {a.obs && <div style={{ fontSize:10, color:G.g500, marginTop:4, fontStyle:"italic" }}>{a.obs}</div>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+
+      {arquivos.length === 0 && (
+        <div style={{ textAlign:"center", padding:"40px 0", color:G.g500 }}>
+          <div style={{ fontSize:40, marginBottom:8 }}>📂</div>
+          <div>Nenhum arquivo ainda.</div>
+        </div>
+      )}
+
+      {/* Modal adicionar */}
+      {modalAdd && (
+        <Modal title="📎 Adicionar Arquivo" onClose={()=>setModalAdd(false)} width={440}>
+          <Field label="Tipo">
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+              {Object.entries(TIPOS_ARQUIVO).map(([k,v])=>(
+                <button key={k} onClick={()=>setForm(f=>({...f,tipo:k}))} style={{ padding:"7px 14px", borderRadius:10, border:`1.5px solid ${form.tipo===k?v.cor:G.g200}`, background:form.tipo===k?`${v.cor}15`:"#fff", color:form.tipo===k?v.cor:G.g500, fontSize:12, fontWeight:form.tipo===k?700:400, cursor:"pointer" }}>
+                  {v.icon} {v.label}
+                </button>
+              ))}
+            </div>
+          </Field>
+          <Field label="Nome do arquivo">
+            <input style={inputSt} value={form.nome} onChange={e=>setForm(f=>({...f,nome:e.target.value}))} placeholder="Ex: Raio-X panorâmico jan/2026"/>
+          </Field>
+          <Field label="Link do arquivo (Google Drive, etc.)">
+            <input style={inputSt} value={form.url} onChange={e=>setForm(f=>({...f,url:e.target.value}))} placeholder="https://drive.google.com/..."/>
+          </Field>
+          <Field label="Observação (opcional)">
+            <input style={inputSt} value={form.obs} onChange={e=>setForm(f=>({...f,obs:e.target.value}))} placeholder="Ex: Empresa TotalDent, pré-tratamento..."/>
+          </Field>
+          <div style={{ background:"#f0f9ff", border:"1px solid #bae6fd", borderRadius:10, padding:"10px 14px", marginBottom:16, fontSize:12, color:"#0369a1" }}>
+            💡 No Google Drive: clique com botão direito no arquivo → <strong>Compartilhar</strong> → <strong>Copiar link</strong>
+          </div>
+          <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
+            <button style={btnSec} onClick={()=>setModalAdd(false)}>Cancelar</button>
+            <button style={btnPrim} onClick={salvarArquivo} disabled={!form.nome||!form.url}>Salvar</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal preview */}
+      {preview && (
+        <div onClick={()=>setPreview(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
+          <div onClick={e=>e.stopPropagation()} style={{ maxWidth:800, width:"100%", background:"#fff", borderRadius:16, overflow:"hidden" }}>
+            <div style={{ background:G.black, padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <span style={{ color:G.gold, fontWeight:700, fontSize:14 }}>{preview.nome}</span>
+              <div style={{ display:"flex", gap:10 }}>
+                <a href={preview.url} target="_blank" rel="noopener noreferrer" style={{ background:G.gold, color:G.black, padding:"5px 12px", borderRadius:8, fontSize:12, fontWeight:700, textDecoration:"none" }}>↗ Abrir original</a>
+                <button onClick={()=>setPreview(null)} style={{ background:"rgba(255,255,255,0.15)", border:"none", color:"#fff", borderRadius:8, padding:"5px 12px", cursor:"pointer", fontSize:14 }}>×</button>
+              </div>
+            </div>
+            <img src={preview.url} alt={preview.nome} style={{ width:"100%", maxHeight:"70vh", objectFit:"contain", background:"#f1f5f9" }} />
+          </div>
+        </div>
       )}
     </div>
   );
