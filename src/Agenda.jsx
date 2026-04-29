@@ -10,6 +10,12 @@ const END_H    = 19;
 const PROFS    = ["Dra. Caroline", "Dr. João Beno"];
 const DURACOES = [30, 45, 60, 90, 120];
 
+// ── Contatos dos profissionais (atualize com os números reais) ──
+const PROF_CONTATOS = {
+  "Dra. Caroline": { phone: "5549999999901", apelido: "Dra. Carol" },
+  "Dr. João Beno":  { phone: "5549999999902", apelido: "Dr. João"  },
+};
+
 const SLOTS = [];
 for (let h = START_H; h < END_H; h++) {
   SLOTS.push(`${String(h).padStart(2,"0")}:00`);
@@ -249,7 +255,8 @@ function ModalDetalhe({ appt, patient, onUpdate, onDelete, onClose }) {
   const [status, setStatus] = useState(appt.status);
   const st = STATUS[status] || STATUS.agendado;
   const nomePrim = appt.patientName.split(" ")[0];
-  const msgWats = encodeURIComponent(`Olá ${nomePrim}! 😊 Lembrando da sua consulta na Eyng Odontologia — ${fmtShort(appt.date)} às ${appt.hora}. Confirma presença?`);
+  const assinante = appt.professional === "Dr. João Beno" ? "Dr. João" : "Dra. Carol";
+  const msgWats = encodeURIComponent(`Oi ${nomePrim}! 😊 Aqui é o ${assinante} da Eyng Odontologia.\n\nPassando pra lembrar da sua consulta *${fmtShort(appt.date)} às ${appt.hora}* 🦷\n\nConsegue comparecer? Me fala aqui!`);
 
   return (
     <Modal title="📋 Detalhes do Agendamento" onClose={onClose}>
@@ -345,13 +352,128 @@ function ApptBlock({ appt, onClick }) {
   );
 }
 
+// ── Modal Fechar o Dia ──
+function ModalFecharDia({ appts, date, onClose }) {
+  const amanha    = addD(date, 1);
+  const fmtDia    = (d) => new Date(d + "T12:00:00").toLocaleDateString("pt-BR", { weekday:"long", day:"2-digit", month:"long" });
+  const ehFimSem  = [0,6].includes(new Date(amanha + "T12:00:00").getDay());
+
+  const porProf = PROFS.map(prof => {
+    const consultas = appts
+      .filter(a => a.date === amanha && a.professional === prof && a.status !== "cancelado")
+      .sort((a, b) => a.hora.localeCompare(b.hora));
+    return { prof, consultas };
+  });
+
+  const totalAmanha = porProf.reduce((s, g) => s + g.consultas.length, 0);
+
+  const buildMsg = ({ prof, consultas }) => {
+    const c = PROF_CONTATOS[prof];
+    const linhas = consultas.length > 0
+      ? consultas.map(a => {
+          const proc = a.servicoDesc ? ` · ${a.servicoDesc}` : "";
+          return `• ${a.hora} — ${a.patientName.split(" ")[0]}${proc}`;
+        }).join("\n")
+      : "Nenhuma consulta agendada.";
+
+    const msg =
+`🌙 *Agenda de amanhã — ${c.apelido}*
+📅 ${fmtDia(amanha).charAt(0).toUpperCase() + fmtDia(amanha).slice(1)} (${fmtShort(amanha)})
+
+${linhas}
+
+${consultas.length > 0
+  ? `Total: *${consultas.length} consulta${consultas.length !== 1 ? "s"  : ""}* ✅`
+  : "Dia livre! 🎉"}
+
+Boa noite! 🦷 _Eyng Odontologia_`;
+
+    return `https://wa.me/${c.phone}?text=${encodeURIComponent(msg)}`;
+  };
+
+  return (
+    <Modal title="🌙 Fechar o Dia" onClose={onClose} width={520}>
+
+      {/* Cabeçalho */}
+      <div style={{textAlign:"center",marginBottom:20}}>
+        <div style={{fontSize:32,marginBottom:6}}>🌙</div>
+        <div style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",fontSize:18,color:C.dark}}>
+          Agenda de amanhã
+        </div>
+        <div style={{fontSize:12,color:C.gray,marginTop:4,textTransform:"capitalize"}}>
+          {fmtDia(amanha)} · {totalAmanha} consulta{totalAmanha !== 1 ? "s" : ""} agendada{totalAmanha !== 1 ? "s" : ""}
+        </div>
+        {ehFimSem && (
+          <div style={{marginTop:10,background:"#fff8e1",border:"1px solid #fcd34d",borderRadius:10,padding:"8px 14px",fontSize:12,color:"#92400e",fontWeight:700}}>
+            ⚠️ Amanhã é fim de semana — verifique se há plantão
+          </div>
+        )}
+      </div>
+
+      {/* Cards por profissional */}
+      {porProf.map(({ prof, consultas }) => {
+        const c = PROF_CONTATOS[prof];
+        return (
+          <div key={prof} style={{background:C.bg,borderRadius:16,padding:16,marginBottom:14}}>
+
+            {/* Header do prof */}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <div style={{width:36,height:36,borderRadius:10,background:`linear-gradient(135deg,${C.primary},${C.dark})`,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:800,fontSize:13}}>
+                  {c.apelido.split(" ").pop()[0]}
+                </div>
+                <div>
+                  <div style={{fontSize:13,fontWeight:800,color:C.text}}>{c.apelido}</div>
+                  <div style={{fontSize:11,color:C.gray}}>{consultas.length} consulta{consultas.length !== 1 ? "s" : ""}</div>
+                </div>
+              </div>
+              <a href={buildMsg({ prof, consultas })} target="_blank" rel="noopener noreferrer"
+                style={{display:"flex",alignItems:"center",gap:6,background:"#dcfce7",border:"1.5px solid #86efac",borderRadius:10,padding:"8px 14px",textDecoration:"none",fontSize:12,fontWeight:800,color:"#15803d"}}>
+                <span style={{fontSize:16}}>💬</span> Avisar no WhatsApp
+              </a>
+            </div>
+
+            {/* Lista de pacientes */}
+            {consultas.length === 0 ? (
+              <div style={{textAlign:"center",padding:"12px 0",color:C.gray,fontSize:12,fontStyle:"italic"}}>
+                Dia livre 🎉
+              </div>
+            ) : (
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                {consultas.map(a => {
+                  const st = STATUS[a.status] || STATUS.agendado;
+                  return (
+                    <div key={a.id} style={{display:"flex",alignItems:"center",gap:10,background:"#fff",borderRadius:10,padding:"9px 12px",border:`1.5px solid ${st.border}`}}>
+                      <div style={{fontSize:12,fontWeight:800,color:st.text,minWidth:38}}>{a.hora}</div>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:13,fontWeight:700,color:C.text}}>{a.patientName}</div>
+                        {a.servicoDesc && <div style={{fontSize:10,color:C.gray,marginTop:1}}>{a.servicoDesc}</div>}
+                      </div>
+                      <div style={{fontSize:10,fontWeight:700,color:st.text,background:st.bg,borderRadius:6,padding:"2px 8px"}}>{st.label}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      <div style={{textAlign:"center",fontSize:11,color:C.gray,marginTop:4}}>
+        💡 As mensagens abrem o WhatsApp com o texto pronto — só clicar em enviar
+      </div>
+    </Modal>
+  );
+}
+
 // ── COMPONENTE PRINCIPAL ──
 export default function Agenda({ patients }) {
   const [date, setDate]         = useState(todayISO());
   const [appts, setAppts]       = useState([]);
   const [loadingDb, setLoadingDb] = useState(true);
-  const [modalNovo, setModalNovo] = useState(null); // { hora, profissional } | null
-  const [modalDetalhe, setModalDetalhe] = useState(null); // appt
+  const [modalNovo, setModalNovo]         = useState(null); // { hora, profissional } | null
+  const [modalDetalhe, setModalDetalhe]   = useState(null); // appt
+  const [modalFechar, setModalFechar]     = useState(false);
 
   // Carrega do Supabase
   useEffect(() => {
@@ -435,6 +557,10 @@ export default function Agenda({ patients }) {
           <input type="date" value={date} onChange={e=>setDate(e.target.value)}
             style={{border:`1.5px solid #fce8ee`,borderRadius:10,padding:"8px 12px",fontSize:12,color:C.text,fontFamily:"Nunito,sans-serif",outline:"none"}}/>
           <BtnPrim label="+ Agendar" icon="📅" onClick={()=>setModalNovo({hora:"09:00",profissional:PROFS[0]})} small/>
+          <button onClick={()=>setModalFechar(true)}
+            style={{background:"linear-gradient(135deg,#6366f1,#4338ca)",color:"#fff",border:"none",borderRadius:10,padding:"7px 14px",fontSize:11,fontWeight:800,fontFamily:"Nunito,sans-serif",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+            🌙 Fechar Dia
+          </button>
         </div>
       </div>
 
@@ -516,6 +642,11 @@ export default function Agenda({ patients }) {
           appt={modalDetalhe}
           patient={patients.find(p=>p.id===modalDetalhe.patientId)}
           onUpdate={updateAppt} onDelete={deleteAppt} onClose={()=>setModalDetalhe(null)}
+        />
+      )}
+      {modalFechar && (
+        <ModalFecharDia
+          appts={appts} date={date} onClose={()=>setModalFechar(false)}
         />
       )}
     </div>
