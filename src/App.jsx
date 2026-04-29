@@ -1,6 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "./supabase";
 import Odontograma2D from "./Odontograma2D";
+import p1 from "./assets/personagens/1_sabio_prontuario.png";
+import p2 from "./assets/personagens/2_sonolento_historico.png";
+import p3 from "./assets/personagens/3_atento_notas.png";
+import p4 from "./assets/personagens/4_alegre_contatos.png";
+import p5 from "./assets/personagens/5_vaidoso_odontograma.png";
+import p6 from "./assets/personagens/6_serio_financeiro.png";
+import p7 from "./assets/personagens/7_voz_ia.png";
 
 // ── TEMA CLÁSSICO (modais / detalhe) ──
 const G = {
@@ -703,16 +710,16 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
       {/* Tabs — 7 Anões */}
       <div style={{ display: "flex", gap: 6, marginBottom: 18, overflowX: "auto", paddingBottom: 4 }}>
         {[
-          ["prontuario",  "🧙",  "Prontuário",  "MESTRE"  ],
-          ["historico",   "😴",  `Histórico`,   "SONECA"  ],
-          ["notas",       "🤧",  `Notas`,       "ATCHIM"  ],
-          ["contatos",    "😊",  "Contatos",    "FELIZ"   ],
-          ["odontograma", "😍",  "Odontograma", "DENGOSO" ],
-          ["financeiro",  "😠",  "Financeiro",  "ZANGADO" ],
-          ["voz",         "🤐",  "Voz / IA",    "DUNGA"   ],
-        ].map(([id, emoji, label, dwarf]) => (
+          ["prontuario",  p1, "Prontuário",  "MESTRE"  ],
+          ["historico",   p2, "Histórico",   "SONECA"  ],
+          ["notas",       p3, "Notas",       "ATCHIM"  ],
+          ["contatos",    p4, "Contatos",    "FELIZ"   ],
+          ["odontograma", p5, "Odontograma", "DENGOSO" ],
+          ["financeiro",  p6, "Financeiro",  "ZANGADO" ],
+          ["voz",         p7, "Voz / IA",    "DUNGA"   ],
+        ].map(([id, img, label, dwarf]) => (
           <button key={id} onClick={() => setTab(id)} style={{
-            flex: "0 0 auto", minWidth: 64, padding: "8px 6px 6px",
+            flex: "0 0 auto", minWidth: 68, padding: "8px 6px 6px",
             borderRadius: 14, border: "none", cursor: "pointer",
             background: tab === id ? "linear-gradient(135deg,#c45f82,#8b3458)" : "#fff",
             color: tab === id ? "#fff" : "#8b3458",
@@ -720,9 +727,9 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
             boxShadow: tab === id ? "0 4px 16px rgba(196,95,130,0.45)" : "0 1px 4px rgba(0,0,0,0.06)",
             transform: tab === id ? "translateY(-2px)" : "translateY(0)",
             transition: "all 0.2s",
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
           }}>
-            <span style={{ fontSize: 18, lineHeight: 1 }}>{emoji}</span>
+            <img src={img} alt={dwarf} style={{ width: 36, height: 36, objectFit: "contain", borderRadius: 8, filter: tab === id ? "brightness(1.1)" : "none", transition: "filter 0.2s" }} />
             <span style={{ fontSize: 9, fontWeight: 700, lineHeight: 1.2 }}>{label}</span>
             <span style={{ fontSize: 7, fontWeight: 800, letterSpacing: 0.8, opacity: tab === id ? 1 : 0.5 }}>{dwarf}</span>
           </button>
