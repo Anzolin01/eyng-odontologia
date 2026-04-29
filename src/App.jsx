@@ -708,7 +708,7 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
       </div>
 
       {/* Tabs — 7 Anões */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 18, overflowX: "auto", paddingBottom: 4 }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "nowrap", justifyContent: "space-between" }}>
         {[
           ["prontuario",  p1, "Prontuário",  "MESTRE"  ],
           ["historico",   p2, "Histórico",   "SONECA"  ],
@@ -719,7 +719,7 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
           ["voz",         p7, "Voz / IA",    "DUNGA"   ],
         ].map(([id, img, label, dwarf]) => (
           <button key={id} onClick={() => setTab(id)} style={{
-            flex: "0 0 auto", minWidth: 110, padding: "12px 8px 10px",
+            flex: "1 1 0", minWidth: 100, padding: "12px 8px 10px",
             borderRadius: 18, border: "none", cursor: "pointer",
             background: tab === id ? "linear-gradient(135deg,#c45f82,#8b3458)" : "#fff",
             color: tab === id ? "#fff" : "#8b3458",
@@ -1019,7 +1019,7 @@ export default function App() {
       )}
 
       {/* CONTENT */}
-      <div style={{ maxWidth: 860, margin: "0 auto", padding: "20px 16px" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "20px 24px" }}>
         {selected ? (
           <DetalhePaciente patient={selected} onBack={() => setSelected(null)} onUpdate={updatePatient} />
         ) : view === "painel" ? (
