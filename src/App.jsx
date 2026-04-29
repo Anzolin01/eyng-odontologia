@@ -864,34 +864,101 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
 
 // ── ABA ARQUIVOS ──
 const TIPOS_ARQUIVO = {
-  foto:  { icon: "📸", label: "Foto clínica",   cor: "#ec4899" },
-  exame: { icon: "📄", label: "Exame / Laudo",  cor: "#0ea5e9" },
+  foto:  { icon: "📸", label: "Foto clínica",    cor: "#ec4899" },
+  exame: { icon: "📄", label: "Exame / Laudo",   cor: "#0ea5e9" },
   stl:   { icon: "🦷", label: "Arquivo 3D (STL)", cor: "#8b5cf6" },
-  outro: { icon: "📎", label: "Outro",           cor: "#64748b" },
+  outro: { icon: "📎", label: "Outro",            cor: "#64748b" },
 };
 
-// Fotos ilustrativas enquanto Google Drive não está conectado
-const FOTOS_DEMO = [
-  { id: "d1", tipo: "foto", nome: "Frontal sorriso", url: "https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=400&q=80", data: "2026-03-28", obs: "Pré-tratamento" },
-  { id: "d2", tipo: "foto", nome: "Lateral direita", url: "https://images.unsplash.com/photo-1588776814546-1ffbb5ecd33e?w=400&q=80", data: "2026-03-28", obs: "" },
-  { id: "d3", tipo: "exame", nome: "Raio-X panorâmico", url: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&q=80", data: "2026-02-10", obs: "Empresa TotalDent" },
-];
+const BUCKET     = "arquivos-pacientes";
+const EXTS_FOTO  = ["jpg","jpeg","png","webp","gif","heic","bmp","tiff"];
+const EXTS_EXAME = ["pdf","doc","docx","xls","xlsx","dcm"];
+
+function detectTipo(filename) {
+  const ext = (filename.split(".").pop() || "").toLowerCase();
+  if (EXTS_FOTO.includes(ext))  return "foto";
+  if (EXTS_EXAME.includes(ext)) return "exame";
+  if (ext === "stl")            return "stl";
+  return "outro";
+}
+function cleanName(filename) {
+  return filename.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim();
+}
+function sanitizePath(s) {
+  return String(s).replace(/[^a-zA-Z0-9._-]/g, "_");
+}
+function fmtSize(bytes) {
+  if (!bytes) return "";
+  if (bytes < 1024)        return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
 
 function AbaArquivos({ patient, onSave }) {
-  const arquivos = patient.arquivos || FOTOS_DEMO;
-  const [modalAdd, setModalAdd] = useState(false);
-  const [preview, setPreview]   = useState(null);
-  const [form, setForm]         = useState({ tipo:"foto", nome:"", url:"", obs:"" });
+  const [arquivos,   setArquivos]   = useState(patient.arquivos || []);
+  const [fila,       setFila]       = useState([]);   // uploads em andamento
+  const [dragging,   setDragging]   = useState(false);
+  const [preview,    setPreview]    = useState(null);
+  const [erroBucket, setErroBucket] = useState(false);
+  const fileRef = useRef(null);
 
-  const salvarArquivo = () => {
-    if (!form.nome || !form.url) return;
-    const novo = { id: uid(), ...form, data: todayISO() };
-    onSave({ ...patient, arquivos: [novo, ...arquivos] });
-    setModalAdd(false);
-    setForm({ tipo:"foto", nome:"", url:"", obs:"" });
+  useEffect(() => { setArquivos(patient.arquivos || []); }, [patient.id]);
+
+  const handleFiles = async (files) => {
+    const arr = Array.from(files);
+    for (const file of arr) {
+      const filaId = `${Date.now()}-${Math.random()}`;
+      setFila(f => [...f, { id: filaId, nome: file.name }]);
+
+      try {
+        const path = `${sanitizePath(patient.id || patient.name)}/${Date.now()}_${sanitizePath(file.name)}`;
+        const { data, error } = await supabase.storage
+          .from(BUCKET)
+          .upload(path, file, { upsert: true });
+
+        if (error) {
+          if (error.message?.includes("Bucket not found") || error.message?.includes("bucket")) {
+            setErroBucket(true);
+          }
+          continue;
+        }
+
+        const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(data.path);
+
+        const novo = {
+          id: String(Date.now()),
+          tipo: detectTipo(file.name),
+          nome: cleanName(file.name),
+          url: publicUrl,
+          data: todayISO(),
+          obs: "",
+          storagePath: data.path,
+          tamanho: file.size,
+        };
+
+        setArquivos(prev => {
+          const updated = [novo, ...prev];
+          onSave({ ...patient, arquivos: updated });
+          return updated;
+        });
+      } finally {
+        setFila(f => f.filter(x => x.id !== filaId));
+      }
+    }
   };
 
-  const remover = (id) => onSave({ ...patient, arquivos: arquivos.filter(a => a.id !== id) });
+  const remover = async (a) => {
+    if (a.storagePath) {
+      await supabase.storage.from(BUCKET).remove([a.storagePath]);
+    }
+    const updated = arquivos.filter(x => x.id !== a.id);
+    setArquivos(updated);
+    onSave({ ...patient, arquivos: updated });
+  };
+
+  const onDragOver  = e => { e.preventDefault(); setDragging(true); };
+  const onDragLeave = e => { if (!e.currentTarget.contains(e.relatedTarget)) setDragging(false); };
+  const onDrop      = e => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); };
 
   const porData = arquivos.reduce((acc, a) => {
     const d = a.data || "sem data";
@@ -903,54 +970,129 @@ function AbaArquivos({ patient, onSave }) {
   return (
     <div>
       {/* Header */}
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
-        <div>
-          <div style={{ fontSize:10, color:"#c45f82", fontWeight:800, letterSpacing:1 }}>😶 TÍMIDO · ARQUIVOS DO PACIENTE</div>
-          <div style={{ fontSize:12, color:G.g500, marginTop:2 }}>{arquivos.length} arquivo{arquivos.length!==1?"s":""} · fotos, exames, documentos</div>
+      <div style={{ marginBottom:16 }}>
+        <div style={{ fontSize:10, color:"#c45f82", fontWeight:800, letterSpacing:1 }}>😶 TÍMIDO · ARQUIVOS DO PACIENTE</div>
+        <div style={{ fontSize:12, color:G.g500, marginTop:2 }}>
+          {arquivos.length} arquivo{arquivos.length !== 1 ? "s" : ""}
+          {fila.length > 0 && <span style={{ color:"#8b5cf6", marginLeft:6 }}>· {fila.length} enviando…</span>}
         </div>
-        <button onClick={()=>setModalAdd(true)} style={btnPrim}>+ Adicionar arquivo</button>
       </div>
 
-      {/* Aviso Google Drive */}
-      <div style={{ background:"#fff8e1", border:"1px solid #fcd34d", borderRadius:12, padding:"10px 14px", marginBottom:18, display:"flex", gap:10, alignItems:"flex-start" }}>
-        <span style={{ fontSize:18 }}>💡</span>
-        <div>
-          <div style={{ fontSize:12, fontWeight:800, color:"#92400e", marginBottom:2 }}>Integração Google Drive — em breve</div>
-          <div style={{ fontSize:11, color:"#a16207", lineHeight:1.6 }}>
-            Em breve os arquivos serão enviados direto daqui para uma pasta do Google Drive da clínica, organizados por paciente e data. Por enquanto cole o link do arquivo.
+      {/* Aviso: bucket não encontrado */}
+      {erroBucket && (
+        <div style={{ background:"#fef2f2", border:"1px solid #fca5a5", borderRadius:12, padding:"12px 16px", marginBottom:16 }}>
+          <div style={{ fontWeight:800, color:"#dc2626", fontSize:12, marginBottom:4 }}>⚠️ Bucket de armazenamento não encontrado</div>
+          <div style={{ fontSize:11, color:"#ef4444", lineHeight:1.6 }}>
+            No painel do Supabase → <strong>Storage</strong>, crie um bucket chamado{" "}
+            <code style={{ background:"#fee2e2", padding:"1px 6px", borderRadius:4, fontFamily:"monospace" }}>arquivos-pacientes</code>{" "}
+            com acesso <strong>público</strong> e tente novamente.
           </div>
         </div>
+      )}
+
+      {/* ── Zona de drop ── */}
+      <div
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        onClick={() => fileRef.current?.click()}
+        style={{
+          border: `2.5px dashed ${dragging ? "#764ba2" : "#d1c0e8"}`,
+          borderRadius: 18,
+          padding: "30px 20px",
+          marginBottom: 20,
+          background: dragging ? "#f3e8ff" : "#faf7ff",
+          cursor: "pointer",
+          transition: "all .2s",
+          textAlign: "center",
+          transform: dragging ? "scale(1.015)" : "scale(1)",
+          boxShadow: dragging ? "0 6px 24px rgba(118,75,162,0.18)" : "none",
+          userSelect: "none",
+        }}
+      >
+        <input
+          ref={fileRef}
+          type="file"
+          multiple
+          accept="image/*,.pdf,.doc,.docx,.stl,.dcm"
+          style={{ display:"none" }}
+          onChange={e => handleFiles(e.target.files)}
+        />
+        <div style={{ fontSize: dragging ? 46 : 38, marginBottom:8, transition:"font-size .2s", lineHeight:1 }}>
+          {dragging ? "📂" : "📎"}
+        </div>
+        <div style={{ fontWeight:800, fontSize:14, color: dragging ? "#764ba2" : "#5b4b8a", marginBottom:4 }}>
+          {dragging ? "Solte para enviar!" : "Arraste arquivos aqui"}
+        </div>
+        <div style={{ fontSize:11, color:"#b0a0cc" }}>
+          ou clique para selecionar · Fotos, PDFs, STL, Raio-X…
+        </div>
       </div>
 
-      {/* Arquivos por data */}
-      {Object.entries(porData).sort(([a],[b])=>b.localeCompare(a)).map(([data, items]) => (
-        <div key={data} style={{ marginBottom:20 }}>
+      {/* ── Fila de upload ── */}
+      {fila.length > 0 && (
+        <div style={{ marginBottom:16 }}>
+          <style>{`@keyframes giro{to{transform:rotate(360deg)}}`}</style>
+          {fila.map(f => (
+            <div key={f.id} style={{
+              display:"flex", alignItems:"center", gap:10,
+              background:"#f5f3ff", border:"1px solid #e0d7f5",
+              borderRadius:10, padding:"10px 14px", marginBottom:6,
+            }}>
+              <div style={{
+                width:15, height:15, borderRadius:"50%", flexShrink:0,
+                border:"2.5px solid #8b5cf6", borderTopColor:"transparent",
+                animation:"giro .7s linear infinite",
+              }}/>
+              <span style={{ fontSize:12, color:"#5b4b8a", fontWeight:600, flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                {f.nome}
+              </span>
+              <span style={{ fontSize:10, color:"#a090c0", flexShrink:0 }}>Enviando…</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Arquivos agrupados por data ── */}
+      {Object.entries(porData).sort(([a],[b]) => b.localeCompare(a)).map(([data, items]) => (
+        <div key={data} style={{ marginBottom:22 }}>
           <div style={{ fontSize:11, fontWeight:800, color:G.g500, letterSpacing:0.8, marginBottom:10 }}>
             📅 {fmtDate(data)}
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:10 }}>
             {items.map(a => {
-              const t = TIPOS_ARQUIVO[a.tipo] || TIPOS_ARQUIVO.outro;
-              const isImg = a.url.match(/\.(jpg|jpeg|png|webp|gif)/i) || a.url.includes("unsplash") || a.url.includes("images");
+              const t   = TIPOS_ARQUIVO[a.tipo] || TIPOS_ARQUIVO.outro;
+              const isImg = a.tipo === "foto" || /\.(jpg|jpeg|png|webp|gif)/i.test(a.url || "");
               return (
-                <div key={a.id} style={{ background:"#fff", borderRadius:14, overflow:"hidden", boxShadow:"0 2px 10px rgba(0,0,0,0.08)", cursor:"pointer", transition:"all .2s" }}
-                  onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
-                  onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
-                  {/* Thumbnail */}
-                  <div onClick={()=>setPreview(a)} style={{ width:"100%", height:110, background:isImg?"#f1f5f9":`${t.cor}15`, display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden" }}>
+                <div
+                  key={a.id}
+                  style={{ background:"#fff", borderRadius:14, overflow:"hidden", boxShadow:"0 2px 10px rgba(0,0,0,0.07)", transition:"all .2s" }}
+                  onMouseEnter={e => e.currentTarget.style.transform = "translateY(-3px)"}
+                  onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
+                >
+                  <div
+                    onClick={() => setPreview(a)}
+                    style={{ width:"100%", height:110, background: isImg ? "#f1f5f9" : `${t.cor}15`, display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden", cursor:"pointer" }}
+                  >
                     {isImg
-                      ? <img src={a.url} alt={a.nome} style={{ width:"100%", height:"100%", objectFit:"cover" }} onError={e=>{ e.target.style.display="none"; }}/>
-                      : <span style={{ fontSize:40 }}>{t.icon}</span>
+                      ? <img src={a.url} alt={a.nome} style={{ width:"100%", height:"100%", objectFit:"cover" }} onError={e => { e.target.style.display = "none"; }}/>
+                      : <span style={{ fontSize:38 }}>{t.icon}</span>
                     }
                   </div>
-                  {/* Info */}
                   <div style={{ padding:"8px 10px" }}>
                     <div style={{ fontSize:11, fontWeight:800, color:G.black, lineHeight:1.3, marginBottom:3 }}>{a.nome}</div>
                     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                      <span style={{ fontSize:9, fontWeight:700, color:t.cor, background:`${t.cor}15`, borderRadius:6, padding:"2px 6px" }}>{t.icon} {t.label}</span>
-                      <button onClick={()=>remover(a.id)} style={{ background:"none", border:"none", color:G.g300, cursor:"pointer", fontSize:14, lineHeight:1 }}>×</button>
+                      <span style={{ fontSize:9, fontWeight:700, color:t.cor, background:`${t.cor}15`, borderRadius:6, padding:"2px 6px" }}>
+                        {t.icon} {t.label}
+                      </span>
+                      <button
+                        onClick={() => remover(a)}
+                        style={{ background:"none", border:"none", color:G.g300, cursor:"pointer", fontSize:17, lineHeight:1, padding:"0 2px" }}
+                        title="Remover"
+                      >×</button>
                     </div>
-                    {a.obs && <div style={{ fontSize:10, color:G.g500, marginTop:4, fontStyle:"italic" }}>{a.obs}</div>}
+                    {a.obs     && <div style={{ fontSize:10, color:G.g500, marginTop:4, fontStyle:"italic" }}>{a.obs}</div>}
+                    {a.tamanho && <div style={{ fontSize:9, color:G.g300, marginTop:2 }}>{fmtSize(a.tamanho)}</div>}
                   </div>
                 </div>
               );
@@ -959,56 +1101,41 @@ function AbaArquivos({ patient, onSave }) {
         </div>
       ))}
 
-      {arquivos.length === 0 && (
-        <div style={{ textAlign:"center", padding:"40px 0", color:G.g500 }}>
-          <div style={{ fontSize:40, marginBottom:8 }}>📂</div>
-          <div>Nenhum arquivo ainda.</div>
+      {arquivos.length === 0 && fila.length === 0 && (
+        <div style={{ textAlign:"center", padding:"32px 0", color:G.g500 }}>
+          <div style={{ fontSize:42, marginBottom:8 }}>📂</div>
+          <div style={{ fontSize:13, fontWeight:600 }}>Nenhum arquivo ainda</div>
+          <div style={{ fontSize:11, color:G.g300, marginTop:4 }}>Arraste uma foto ou documento acima para começar</div>
         </div>
       )}
 
-      {/* Modal adicionar */}
-      {modalAdd && (
-        <Modal title="📎 Adicionar Arquivo" onClose={()=>setModalAdd(false)} width={440}>
-          <Field label="Tipo">
-            <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-              {Object.entries(TIPOS_ARQUIVO).map(([k,v])=>(
-                <button key={k} onClick={()=>setForm(f=>({...f,tipo:k}))} style={{ padding:"7px 14px", borderRadius:10, border:`1.5px solid ${form.tipo===k?v.cor:G.g200}`, background:form.tipo===k?`${v.cor}15`:"#fff", color:form.tipo===k?v.cor:G.g500, fontSize:12, fontWeight:form.tipo===k?700:400, cursor:"pointer" }}>
-                  {v.icon} {v.label}
-                </button>
-              ))}
-            </div>
-          </Field>
-          <Field label="Nome do arquivo">
-            <input style={inputSt} value={form.nome} onChange={e=>setForm(f=>({...f,nome:e.target.value}))} placeholder="Ex: Raio-X panorâmico jan/2026"/>
-          </Field>
-          <Field label="Link do arquivo (Google Drive, etc.)">
-            <input style={inputSt} value={form.url} onChange={e=>setForm(f=>({...f,url:e.target.value}))} placeholder="https://drive.google.com/..."/>
-          </Field>
-          <Field label="Observação (opcional)">
-            <input style={inputSt} value={form.obs} onChange={e=>setForm(f=>({...f,obs:e.target.value}))} placeholder="Ex: Empresa TotalDent, pré-tratamento..."/>
-          </Field>
-          <div style={{ background:"#f0f9ff", border:"1px solid #bae6fd", borderRadius:10, padding:"10px 14px", marginBottom:16, fontSize:12, color:"#0369a1" }}>
-            💡 No Google Drive: clique com botão direito no arquivo → <strong>Compartilhar</strong> → <strong>Copiar link</strong>
-          </div>
-          <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
-            <button style={btnSec} onClick={()=>setModalAdd(false)}>Cancelar</button>
-            <button style={btnPrim} onClick={salvarArquivo} disabled={!form.nome||!form.url}>Salvar</button>
-          </div>
-        </Modal>
-      )}
-
-      {/* Modal preview */}
+      {/* ── Modal preview ── */}
       {preview && (
-        <div onClick={()=>setPreview(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
-          <div onClick={e=>e.stopPropagation()} style={{ maxWidth:800, width:"100%", background:"#fff", borderRadius:16, overflow:"hidden" }}>
+        <div
+          onClick={() => setPreview(null)}
+          style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.88)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ maxWidth:820, width:"100%", background:"#fff", borderRadius:16, overflow:"hidden" }}>
             <div style={{ background:G.black, padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
               <span style={{ color:G.gold, fontWeight:700, fontSize:14 }}>{preview.nome}</span>
               <div style={{ display:"flex", gap:10 }}>
                 <a href={preview.url} target="_blank" rel="noopener noreferrer" style={{ background:G.gold, color:G.black, padding:"5px 12px", borderRadius:8, fontSize:12, fontWeight:700, textDecoration:"none" }}>↗ Abrir original</a>
-                <button onClick={()=>setPreview(null)} style={{ background:"rgba(255,255,255,0.15)", border:"none", color:"#fff", borderRadius:8, padding:"5px 12px", cursor:"pointer", fontSize:14 }}>×</button>
+                <button onClick={() => setPreview(null)} style={{ background:"rgba(255,255,255,0.15)", border:"none", color:"#fff", borderRadius:8, padding:"5px 12px", cursor:"pointer", fontSize:14 }}>×</button>
               </div>
             </div>
-            <img src={preview.url} alt={preview.nome} style={{ width:"100%", maxHeight:"70vh", objectFit:"contain", background:"#f1f5f9" }} />
+            {(preview.tipo === "foto" || /\.(jpg|jpeg|png|webp|gif)/i.test(preview.url || ""))
+              ? <img src={preview.url} alt={preview.nome} style={{ width:"100%", maxHeight:"72vh", objectFit:"contain", background:"#f1f5f9" }}/>
+              : (
+                <div style={{ padding:48, textAlign:"center" }}>
+                  <div style={{ fontSize:64, marginBottom:14 }}>{TIPOS_ARQUIVO[preview.tipo]?.icon || "📎"}</div>
+                  <div style={{ fontSize:15, fontWeight:700, marginBottom:6 }}>{preview.nome}</div>
+                  {preview.tamanho && <div style={{ fontSize:12, color:G.g500, marginBottom:20 }}>{fmtSize(preview.tamanho)}</div>}
+                  <a href={preview.url} target="_blank" rel="noopener noreferrer" style={{ background:"#764ba2", color:"#fff", padding:"11px 28px", borderRadius:10, fontSize:13, fontWeight:700, textDecoration:"none" }}>
+                    Abrir arquivo ↗
+                  </a>
+                </div>
+              )
+            }
           </div>
         </div>
       )}
