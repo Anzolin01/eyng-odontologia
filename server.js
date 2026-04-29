@@ -79,7 +79,8 @@ Extraia do texto e responda APENAS com JSON válido, sem markdown, sem explicaç
 });
 
 // ── Todas as rotas não-API retornam o index.html (SPA) ──
-app.get("*", (_req, res) => {
+// Express 5: usa regex em vez de "*"
+app.get(/(.*)/, (_req, res) => {
   res.sendFile(join(__dirname, "dist", "index.html"));
 });
 
