@@ -292,7 +292,7 @@ function VoiceModule({ patient, onSave, onClose }) {
   const processTranscript = async (text) => {
     setStage("processing");
     try {
-      const response = await fetch("/.netlify/functions/interpret-voice", {
+      const response = await fetch("/api/interpret-voice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
