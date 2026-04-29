@@ -1,0 +1,523 @@
+import { useState, useEffect, useRef } from "react";
+import { supabase } from "./supabase";
+import { SERVICOS } from "./servicos";
+
+// ── Constantes ──
+const SLOT_H   = 56;   // px por slot de 30min
+const SLOT_MIN = 30;
+const START_H  = 8;
+const END_H    = 19;
+const PROFS    = ["Dra. Caroline", "Dr. João Beno"];
+const DURACOES = [30, 45, 60, 90, 120];
+
+const SLOTS = [];
+for (let h = START_H; h < END_H; h++) {
+  SLOTS.push(`${String(h).padStart(2,"0")}:00`);
+  SLOTS.push(`${String(h).padStart(2,"0")}:30`);
+}
+
+const STATUS = {
+  agendado:   { bg:"#e0f2fe", border:"#0ea5e9", text:"#0369a1", label:"Agendado"    },
+  confirmado: { bg:"#dcfce7", border:"#16a34a", text:"#15803d", label:"Confirmado ✓"},
+  realizado:  { bg:"#f0fdf4", border:"#86efac", text:"#16a34a", label:"Realizado"   },
+  cancelado:  { bg:"#f8fafc", border:"#e2e8f0", text:"#94a3b8", label:"Cancelado"   },
+  faltou:     { bg:"#fef2f2", border:"#fca5a5", text:"#dc2626", label:"Faltou"      },
+};
+
+const C = {
+  primary:"#c45f82", dark:"#8b3458", bg:"#fdf4f6", bgMed:"#fce8ee",
+  text:"#4a2c3a", textLight:"#8b3458", gray:"#94a3b8", green:"#16a34a",
+};
+
+// ── Helpers ──
+const uid      = () => Math.random().toString(36).slice(2,9);
+const todayISO = () => new Date().toISOString().split("T")[0];
+const addD     = (d,n) => { const dt=new Date(d+"T12:00:00"); dt.setDate(dt.getDate()+n); return dt.toISOString().split("T")[0]; };
+const fmtLong  = (d) => new Date(d+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
+const fmtShort = (d) => { const [y,m,dd]=d.split("-"); return `${dd}/${m}/${y}`; };
+const timeToSlot = (t) => { const [h,m]=t.split(":").map(Number); return (h-START_H)*2+(m>=30?1:0); };
+const slotToTime = (s) => { const tot=START_H*60+s*SLOT_MIN; return `${String(Math.floor(tot/60)).padStart(2,"0")}:${String(tot%60).padStart(2,"0")}`; };
+const initials  = (name) => name.split(" ").map(n=>n[0]).slice(0,2).join("").toUpperCase();
+
+// ── Input / Button helpers ──
+const inputSt = { width:"100%", border:`1.5px solid #f0d6df`, borderRadius:10, padding:"10px 12px", fontSize:13, fontFamily:"Nunito,sans-serif", color:C.text, outline:"none", background:"#fff" };
+const BtnPrim = ({label,onClick,disabled,small,icon})=>(
+  <button onClick={onClick} disabled={disabled} style={{background:`linear-gradient(135deg,${C.primary},${C.dark})`,color:"#fff",border:"none",borderRadius:10,padding:small?"7px 14px":"11px 22px",fontSize:small?11:13,fontWeight:800,fontFamily:"Nunito,sans-serif",cursor:disabled?"not-allowed":"pointer",opacity:disabled?0.5:1,display:"flex",alignItems:"center",gap:6}}>
+    {icon&&<span>{icon}</span>}{label}
+  </button>
+);
+const BtnSec = ({label,onClick,small})=>(
+  <button onClick={onClick} style={{background:C.bgMed,color:C.dark,border:"none",borderRadius:10,padding:small?"7px 14px":"11px 18px",fontSize:small?11:13,fontWeight:700,fontFamily:"Nunito,sans-serif",cursor:"pointer"}}>
+    {label}
+  </button>
+);
+
+// ── Modal base ──
+function Modal({title,onClose,children,width=480}){
+  return(
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(74,44,58,0.5)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:20,width:"100%",maxWidth:width,maxHeight:"92vh",overflowY:"auto",boxShadow:"0 24px 60px rgba(139,52,88,0.25)"}}>
+        <div style={{background:`linear-gradient(135deg,${C.primary},${C.dark})`,padding:"14px 20px",borderRadius:"20px 20px 0 0",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <span style={{color:"#fff",fontWeight:800,fontSize:15,fontFamily:"Nunito,sans-serif"}}>{title}</span>
+          <button onClick={onClose} style={{background:"rgba(255,255,255,0.2)",border:"none",borderRadius:8,padding:"4px 10px",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700}}>✕</button>
+        </div>
+        <div style={{padding:20}}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── Alertas do paciente ──
+function AlertasPaciente({ patient }) {
+  if (!patient) return null;
+  const alertas = patient.notes?.filter(n=>n.type==="alert") || [];
+  const prefs   = patient.notes?.filter(n=>n.type==="preference") || [];
+  if (!alertas.length && !prefs.length) return null;
+  return (
+    <div style={{marginBottom:14}}>
+      {alertas.map(n=>(
+        <div key={n.id} style={{background:"#fff8e1",border:"1.5px solid #fcd34d",borderRadius:10,padding:"8px 12px",marginBottom:6,display:"flex",gap:8,alignItems:"flex-start"}}>
+          <span style={{fontSize:14}}>⚠️</span>
+          <span style={{fontSize:12,color:"#92400e",fontWeight:700}}>{n.text}</span>
+        </div>
+      ))}
+      {prefs.map(n=>(
+        <div key={n.id} style={{background:"#f0f9ff",border:"1.5px solid #bae6fd",borderRadius:10,padding:"8px 12px",marginBottom:6,display:"flex",gap:8,alignItems:"flex-start"}}>
+          <span style={{fontSize:14}}>💡</span>
+          <span style={{fontSize:12,color:"#0369a1"}}>{n.text}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Modal Novo Agendamento ──
+function ModalNovoAgendamento({ date, hora, profissional, patients, onSave, onClose }) {
+  const [step, setStep]       = useState("paciente");
+  const [patient, setPatient] = useState(null);
+  const [q, setQ]             = useState("");
+  const [form, setForm]       = useState({
+    date: date || todayISO(),
+    hora: hora || "09:00",
+    duracao: 60,
+    profissional: profissional || PROFS[0],
+    servicoDesc: "",
+    servicoId: "",
+    obs: "",
+  });
+
+  const set = (k,v) => setForm(f=>({...f,[k]:v}));
+
+  const filtered = q.length>=1
+    ? patients.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())||p.phone.includes(q))
+    : [];
+
+  const handleSave = () => {
+    onSave({
+      id: uid(),
+      patientId: patient?.id||null,
+      patientName: patient?.name || "Paciente avulso",
+      phone: patient?.phone || "",
+      professional: form.profissional,
+      date: form.date,
+      hora: form.hora,
+      duracao: form.duracao,
+      servicoDesc: form.servicoDesc,
+      servicoId: form.servicoId,
+      obs: form.obs,
+      status: "agendado",
+    });
+  };
+
+  return (
+    <Modal title="📅 Novo Agendamento" onClose={onClose} width={520}>
+      {/* Passo 1: Paciente */}
+      {step === "paciente" && (
+        <>
+          <div style={{fontSize:11,fontWeight:800,color:C.textLight,letterSpacing:1,marginBottom:12}}>BUSCAR PACIENTE</div>
+          <input autoFocus placeholder="Nome ou telefone..." value={q} onChange={e=>setQ(e.target.value)} style={{...inputSt,marginBottom:10}}/>
+          <div style={{maxHeight:240,overflowY:"auto",display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
+            {filtered.map(p=>(
+              <div key={p.id} onClick={()=>{setPatient(p);setStep("detalhes");}}
+                style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:12,cursor:"pointer",border:`1.5px solid #fce8ee`,background:C.bg,transition:"all .15s"}}
+                onMouseEnter={e=>e.currentTarget.style.borderColor=C.primary}
+                onMouseLeave={e=>e.currentTarget.style.borderColor="#fce8ee"}>
+                <div style={{width:36,height:36,borderRadius:10,background:`linear-gradient(135deg,${C.primary},${C.dark})`,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:800,fontSize:12,flexShrink:0}}>{initials(p.name)}</div>
+                <div>
+                  <div style={{fontSize:13,fontWeight:700,color:C.text}}>{p.name}</div>
+                  <div style={{fontSize:11,color:C.gray}}>{p.specialty} · {p.professional} · {p.phone}</div>
+                </div>
+              </div>
+            ))}
+            {q.length>=1&&filtered.length===0&&<div style={{textAlign:"center",padding:16,color:C.gray,fontSize:13}}>Nenhum paciente encontrado.</div>}
+          </div>
+          <button onClick={()=>{setPatient(null);setStep("detalhes");}} style={{fontSize:12,color:C.gray,background:"none",border:"none",cursor:"pointer",fontFamily:"Nunito,sans-serif"}}>
+            → Continuar sem vincular paciente
+          </button>
+        </>
+      )}
+
+      {/* Passo 2: Detalhes */}
+      {step === "detalhes" && (
+        <>
+          {patient && (
+            <div style={{background:C.bgMed,borderRadius:12,padding:"10px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
+              <div style={{width:34,height:34,borderRadius:10,background:`linear-gradient(135deg,${C.primary},${C.dark})`,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:800,fontSize:12,flexShrink:0}}>{initials(patient.name)}</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,fontWeight:700,color:C.text}}>{patient.name}</div>
+                <div style={{fontSize:11,color:C.gray}}>{patient.specialty} · {patient.phone}</div>
+              </div>
+              <button onClick={()=>{setPatient(null);setStep("paciente");setQ("");}} style={{background:"none",border:"none",color:C.gray,cursor:"pointer",fontSize:12}}>trocar</button>
+            </div>
+          )}
+
+          <AlertasPaciente patient={patient}/>
+
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+            <div>
+              <div style={{fontSize:10,fontWeight:800,color:C.textLight,letterSpacing:0.8,marginBottom:5}}>DATA</div>
+              <input type="date" style={inputSt} value={form.date} onChange={e=>set("date",e.target.value)}/>
+            </div>
+            <div>
+              <div style={{fontSize:10,fontWeight:800,color:C.textLight,letterSpacing:0.8,marginBottom:5}}>HORÁRIO</div>
+              <select style={inputSt} value={form.hora} onChange={e=>set("hora",e.target.value)}>
+                {SLOTS.map(s=><option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:10,fontWeight:800,color:C.textLight,letterSpacing:0.8,marginBottom:5}}>DURAÇÃO</div>
+            <div style={{display:"flex",gap:8}}>
+              {DURACOES.map(d=>(
+                <button key={d} onClick={()=>set("duracao",d)} style={{flex:1,padding:"8px 4px",borderRadius:10,border:"none",cursor:"pointer",background:form.duracao===d?C.primary:C.bgMed,color:form.duracao===d?"#fff":C.dark,fontSize:11,fontWeight:700,fontFamily:"Nunito,sans-serif"}}>
+                  {d<60?`${d}min`:d===60?"1h":d===90?"1h30":d===120?"2h":""}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:10,fontWeight:800,color:C.textLight,letterSpacing:0.8,marginBottom:5}}>PROFISSIONAL</div>
+            <div style={{display:"flex",gap:8}}>
+              {PROFS.map(p=>(
+                <button key={p} onClick={()=>set("profissional",p)} style={{flex:1,padding:"9px 8px",borderRadius:10,border:"none",cursor:"pointer",background:form.profissional===p?C.primary:C.bgMed,color:form.profissional===p?"#fff":C.dark,fontSize:12,fontWeight:700,fontFamily:"Nunito,sans-serif"}}>
+                  {p.replace("Dra. ","Dra. ").replace("Dr. ","Dr. ")}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:10,fontWeight:800,color:C.textLight,letterSpacing:0.8,marginBottom:5}}>PROCEDIMENTO</div>
+            <select style={inputSt} value={form.servicoId} onChange={e=>{
+              const s=SERVICOS.find(x=>x.id===e.target.value);
+              set("servicoId",e.target.value);
+              if(s) set("servicoDesc",s.desc);
+            }}>
+              <option value="">Selecione ou deixe em branco...</option>
+              {["Consultas","Ortodontia","Implantodontia","Prótese","Estética","Clínico Geral","Documentação"].map(cat=>(
+                <optgroup key={cat} label={cat}>
+                  {SERVICOS.filter(s=>s.categoria===cat).map(s=>(
+                    <option key={s.id} value={s.id}>{s.desc}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            {!form.servicoId && (
+              <input style={{...inputSt,marginTop:8}} placeholder="Ou descreva o procedimento manualmente..." value={form.servicoDesc} onChange={e=>set("servicoDesc",e.target.value)}/>
+            )}
+          </div>
+
+          <div style={{marginBottom:20}}>
+            <div style={{fontSize:10,fontWeight:800,color:C.textLight,letterSpacing:0.8,marginBottom:5}}>OBSERVAÇÃO (opcional)</div>
+            <input style={inputSt} placeholder="Ex: paciente pede cadeira reclinada, trazer exame..." value={form.obs} onChange={e=>set("obs",e.target.value)}/>
+          </div>
+
+          <div style={{display:"flex",gap:10,justifyContent:"space-between"}}>
+            <BtnSec label="← Paciente" onClick={()=>setStep("paciente")}/>
+            <BtnPrim label="Confirmar Agendamento" icon="📅" onClick={handleSave} disabled={!form.date||!form.hora}/>
+          </div>
+        </>
+      )}
+    </Modal>
+  );
+}
+
+// ── Modal Detalhe do Agendamento ──
+function ModalDetalhe({ appt, patient, onUpdate, onDelete, onClose }) {
+  const [status, setStatus] = useState(appt.status);
+  const st = STATUS[status] || STATUS.agendado;
+  const nomePrim = appt.patientName.split(" ")[0];
+  const msgWats = encodeURIComponent(`Olá ${nomePrim}! 😊 Lembrando da sua consulta na Eyng Odontologia — ${fmtShort(appt.date)} às ${appt.hora}. Confirma presença?`);
+
+  return (
+    <Modal title="📋 Detalhes do Agendamento" onClose={onClose}>
+      {/* Paciente */}
+      <div style={{background:C.bgMed,borderRadius:14,padding:"14px 16px",marginBottom:16}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <div style={{width:44,height:44,borderRadius:12,background:`linear-gradient(135deg,${C.primary},${C.dark})`,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:800,fontSize:15,flexShrink:0}}>{initials(appt.patientName)}</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:16,fontWeight:800,color:C.text}}>{appt.patientName}</div>
+            <div style={{fontSize:12,color:C.gray}}>{appt.professional} · {fmtShort(appt.date)} · {appt.hora} · {appt.duracao}min</div>
+          </div>
+        </div>
+        {appt.servicoDesc && <div style={{marginTop:10,fontSize:13,color:C.text,fontWeight:600}}>🩺 {appt.servicoDesc}</div>}
+        {appt.obs && <div style={{marginTop:6,fontSize:12,color:C.gray,fontStyle:"italic"}}>💬 {appt.obs}</div>}
+      </div>
+
+      {/* Alertas */}
+      <AlertasPaciente patient={patient}/>
+
+      {/* Status */}
+      <div style={{marginBottom:16}}>
+        <div style={{fontSize:10,fontWeight:800,color:C.textLight,letterSpacing:1,marginBottom:8}}>STATUS</div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          {Object.entries(STATUS).map(([k,v])=>(
+            <button key={k} onClick={()=>{setStatus(k);onUpdate({...appt,status:k});}} style={{padding:"7px 14px",borderRadius:20,border:`1.5px solid ${status===k?v.border:"#fce8ee"}`,background:status===k?v.bg:"#fff",color:status===k?v.text:C.gray,fontSize:11,fontWeight:700,fontFamily:"Nunito,sans-serif",cursor:"pointer"}}>
+              {v.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* WhatsApp */}
+      {appt.phone && (
+        <a href={`https://wa.me/55${appt.phone.replace(/\D/g,"")}?text=${msgWats}`} target="_blank" rel="noopener noreferrer"
+          style={{display:"flex",alignItems:"center",gap:10,background:"#dcfce7",border:"1.5px solid #86efac",borderRadius:12,padding:"12px 16px",marginBottom:16,textDecoration:"none"}}>
+          <span style={{fontSize:20}}>💬</span>
+          <div>
+            <div style={{fontSize:13,fontWeight:800,color:"#15803d"}}>Enviar lembrete no WhatsApp</div>
+            <div style={{fontSize:11,color:"#16a34a"}}>{appt.phone}</div>
+          </div>
+          <span style={{marginLeft:"auto",color:"#16a34a",fontSize:14}}>→</span>
+        </a>
+      )}
+
+      <div style={{display:"flex",gap:10,justifyContent:"space-between"}}>
+        <button onClick={()=>onDelete(appt.id)} style={{background:"#fef2f2",color:"#dc2626",border:"none",borderRadius:10,padding:"9px 16px",fontSize:12,fontWeight:700,fontFamily:"Nunito,sans-serif",cursor:"pointer"}}>
+          🗑 Excluir
+        </button>
+        <BtnPrim label="Fechar" onClick={onClose}/>
+      </div>
+    </Modal>
+  );
+}
+
+// ── Bloco de agendamento no grid ──
+function ApptBlock({ appt, onClick }) {
+  const st    = STATUS[appt.status] || STATUS.agendado;
+  const slots = appt.duracao / SLOT_MIN;
+  const hasAlert = appt._patientAlerts > 0;
+
+  return (
+    <div onClick={()=>onClick(appt)}
+      style={{
+        position:"absolute",
+        left:3, right:3,
+        top:timeToSlot(appt.hora)*SLOT_H+2,
+        height:slots*SLOT_H-4,
+        background:st.bg,
+        border:`2px solid ${st.border}`,
+        borderRadius:10,
+        padding:"5px 8px",
+        cursor:"pointer",
+        overflow:"hidden",
+        zIndex:10,
+        transition:"all .15s",
+        boxShadow:`0 2px 8px ${st.border}33`,
+      }}
+      onMouseEnter={e=>e.currentTarget.style.filter="brightness(0.97)"}
+      onMouseLeave={e=>e.currentTarget.style.filter=""}>
+      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:4}}>
+        <div style={{flex:1,overflow:"hidden"}}>
+          <div style={{fontSize:11,fontWeight:800,color:st.text,lineHeight:1.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+            {hasAlert && <span style={{marginRight:3}}>⚠️</span>}
+            {appt.patientName}
+          </div>
+          {slots >= 2 && appt.servicoDesc && (
+            <div style={{fontSize:10,color:st.text,opacity:0.8,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{appt.servicoDesc}</div>
+          )}
+        </div>
+        <div style={{fontSize:9,fontWeight:700,color:st.text,opacity:0.7,flexShrink:0}}>{appt.hora}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── COMPONENTE PRINCIPAL ──
+export default function Agenda({ patients }) {
+  const [date, setDate]         = useState(todayISO());
+  const [appts, setAppts]       = useState([]);
+  const [loadingDb, setLoadingDb] = useState(true);
+  const [modalNovo, setModalNovo] = useState(null); // { hora, profissional } | null
+  const [modalDetalhe, setModalDetalhe] = useState(null); // appt
+
+  // Carrega do Supabase
+  useEffect(() => {
+    const load = async () => {
+      setLoadingDb(true);
+      const { data, error } = await supabase.from("agenda").select("*");
+      if (!error && data) {
+        setAppts(data.map(row => ({ ...row.data, _dbId: row.id })));
+      }
+      setLoadingDb(false);
+    };
+    load();
+  }, []);
+
+  const saveAppt = async (appt) => {
+    const { data, error } = await supabase.from("agenda").insert({ data: appt }).select();
+    if (!error && data?.[0]) {
+      setAppts(prev => [...prev, { ...appt, _dbId: data[0].id }]);
+    } else {
+      setAppts(prev => [...prev, appt]);
+    }
+    setModalNovo(null);
+  };
+
+  const updateAppt = async (updated) => {
+    setAppts(prev => prev.map(a => a.id === updated.id ? { ...updated, _dbId: a._dbId } : a));
+    const found = appts.find(a => a.id === updated.id);
+    if (found?._dbId) {
+      const { _dbId, ...data } = { ...updated };
+      await supabase.from("agenda").update({ data }).eq("id", found._dbId);
+    }
+    setModalDetalhe(prev => prev?.id === updated.id ? { ...updated, _dbId: prev._dbId } : prev);
+  };
+
+  const deleteAppt = async (id) => {
+    const found = appts.find(a => a.id === id);
+    setAppts(prev => prev.filter(a => a.id !== id));
+    if (found?._dbId) await supabase.from("agenda").delete().eq("id", found._dbId);
+    setModalDetalhe(null);
+  };
+
+  // Agendamentos do dia, enriquecidos com alertas do paciente
+  const apptsDia = appts
+    .filter(a => a.date === date)
+    .map(a => {
+      const p = patients.find(x => x.id === a.patientId);
+      return { ...a, _patientAlerts: p?.notes?.filter(n=>n.type==="alert").length || 0 };
+    });
+
+  const apptsPorProf = (prof) => apptsDia.filter(a => a.professional === prof);
+
+  // Contador de agendamentos do dia
+  const totalDia = apptsDia.filter(a=>a.status!=="cancelado").length;
+  const confirmados = apptsDia.filter(a=>a.status==="confirmado").length;
+
+  const isToday = date === todayISO();
+  const dayLabel = fmtLong(date);
+
+  return (
+    <div style={{fontFamily:"Nunito,sans-serif"}}>
+
+      {/* Header da agenda */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:12}}>
+        <div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",fontSize:22,color:C.dark,textTransform:"capitalize"}}>{dayLabel}</div>
+          <div style={{fontSize:12,color:C.gray,marginTop:2}}>
+            {totalDia} consultas · {confirmados} confirmadas
+            {apptsDia.filter(a=>a._patientAlerts>0).length>0 && (
+              <span style={{marginLeft:8,color:"#d97706",fontWeight:700}}>⚠️ {apptsDia.filter(a=>a._patientAlerts>0).length} com alerta</span>
+            )}
+          </div>
+        </div>
+
+        {/* Navegação de data */}
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <button onClick={()=>setDate(d=>addD(d,-1))} style={{background:"#fff",border:`1px solid #fce8ee`,borderRadius:10,padding:"8px 14px",cursor:"pointer",fontSize:14,color:C.dark,fontWeight:700}}>‹</button>
+          {!isToday && (
+            <button onClick={()=>setDate(todayISO())} style={{background:C.bgMed,border:"none",borderRadius:10,padding:"8px 14px",cursor:"pointer",fontSize:12,color:C.dark,fontWeight:700,fontFamily:"Nunito,sans-serif"}}>Hoje</button>
+          )}
+          <button onClick={()=>setDate(d=>addD(d,1))} style={{background:"#fff",border:`1px solid #fce8ee`,borderRadius:10,padding:"8px 14px",cursor:"pointer",fontSize:14,color:C.dark,fontWeight:700}}>›</button>
+          <input type="date" value={date} onChange={e=>setDate(e.target.value)}
+            style={{border:`1.5px solid #fce8ee`,borderRadius:10,padding:"8px 12px",fontSize:12,color:C.text,fontFamily:"Nunito,sans-serif",outline:"none"}}/>
+          <BtnPrim label="+ Agendar" icon="📅" onClick={()=>setModalNovo({hora:"09:00",profissional:PROFS[0]})} small/>
+        </div>
+      </div>
+
+      {/* Grid da agenda */}
+      <div style={{background:"#fff",borderRadius:18,boxShadow:"0 4px 24px rgba(196,95,130,0.1)",overflow:"hidden"}}>
+
+        {/* Cabeçalho dos profissionais */}
+        <div style={{display:"grid",gridTemplateColumns:`64px repeat(${PROFS.length},1fr)`,borderBottom:`2px solid #fce8ee`}}>
+          <div style={{padding:"14px 8px"}}/>
+          {PROFS.map(p=>(
+            <div key={p} style={{padding:"14px 16px",borderLeft:"1px solid #fce8ee",background:`linear-gradient(135deg,${C.primary}10,${C.dark}08)`}}>
+              <div style={{fontSize:14,fontWeight:800,color:C.dark}}>{p}</div>
+              <div style={{fontSize:11,color:C.gray,marginTop:2}}>
+                {apptsPorProf(p).filter(a=>a.status!=="cancelado").length} consultas hoje
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {loadingDb ? (
+          <div style={{textAlign:"center",padding:48,color:C.gray}}>Carregando agenda...</div>
+        ) : (
+          /* Slots de horário */
+          <div style={{display:"grid",gridTemplateColumns:`64px repeat(${PROFS.length},1fr)`,overflowY:"auto",maxHeight:"calc(100vh - 300px)"}}>
+
+            {/* Coluna de horários */}
+            <div>
+              {SLOTS.map((s,i)=>(
+                <div key={s} style={{height:SLOT_H,display:"flex",alignItems:"flex-start",justifyContent:"flex-end",paddingRight:10,paddingTop:4,borderBottom:`1px solid ${i%2===1?"#fdf4f6":"#fce8ee"}`}}>
+                  {i%2===0 && <span style={{fontSize:11,fontWeight:700,color:C.gray}}>{s}</span>}
+                </div>
+              ))}
+            </div>
+
+            {/* Coluna de cada profissional */}
+            {PROFS.map(prof=>(
+              <div key={prof} style={{borderLeft:"1px solid #fce8ee",position:"relative",minHeight:SLOTS.length*SLOT_H}}>
+                {/* Slots clicáveis */}
+                {SLOTS.map((s,i)=>(
+                  <div key={s} onClick={()=>setModalNovo({hora:s,profissional:prof})}
+                    style={{height:SLOT_H,borderBottom:`1px solid ${i%2===1?"#fdf4f6":"#fce8ee"}`,cursor:"pointer",transition:"background .1s"}}
+                    onMouseEnter={e=>e.currentTarget.style.background=`${C.primary}08`}
+                    onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+                  />
+                ))}
+
+                {/* Linha "agora" */}
+                {isToday && (() => {
+                  const now = new Date();
+                  const nowSlot = (now.getHours()-START_H)*2 + (now.getMinutes()>=30?1:0);
+                  const frac = (now.getMinutes()%30)/30;
+                  if (nowSlot < 0 || nowSlot >= SLOTS.length) return null;
+                  return (
+                    <div style={{position:"absolute",left:0,right:0,top:nowSlot*SLOT_H+frac*SLOT_H,height:2,background:C.primary,zIndex:20,pointerEvents:"none"}}>
+                      <div style={{width:8,height:8,borderRadius:"50%",background:C.primary,position:"absolute",left:-4,top:-3}}/>
+                    </div>
+                  );
+                })()}
+
+                {/* Agendamentos */}
+                {apptsPorProf(prof).map(a=>(
+                  <ApptBlock key={a.id} appt={a} onClick={setModalDetalhe}/>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Modais */}
+      {modalNovo && (
+        <ModalNovoAgendamento
+          date={date} hora={modalNovo.hora} profissional={modalNovo.profissional}
+          patients={patients} onSave={saveAppt} onClose={()=>setModalNovo(null)}
+        />
+      )}
+      {modalDetalhe && (
+        <ModalDetalhe
+          appt={modalDetalhe}
+          patient={patients.find(p=>p.id===modalDetalhe.patientId)}
+          onUpdate={updateAppt} onDelete={deleteAppt} onClose={()=>setModalDetalhe(null)}
+        />
+      )}
+    </div>
+  );
+}

@@ -3,6 +3,7 @@ import { supabase } from "./supabase";
 import Odontograma2D from "./Odontograma2D";
 import FinanceiroModule, { calcResumo } from "./FinanceiroModule";
 import CaixaDia from "./CaixaDia";
+import Agenda from "./Agenda";
 import p1 from "./assets/personagens/1_sabio_prontuario.png";
 import p2 from "./assets/personagens/2_sonolento_historico.png";
 import p3 from "./assets/personagens/3_atento_notas.png";
@@ -1018,7 +1019,7 @@ export default function App() {
       {/* NAV */}
       {!selected && (
         <div style={{ background: "#fff", borderBottom: "1px solid #f1f5f9", padding: "0 20px", display: "flex", alignItems: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-          {[["painel", "🚨 Retornos"], ["pacientes", "👥 Pacientes"], ["caixa", "💸 Caixa do Dia"]].map(([id, label]) => (
+          {[["painel", "🚨 Retornos"], ["agenda", "📅 Agenda"], ["pacientes", "👥 Pacientes"], ["caixa", "💸 Caixa do Dia"]].map(([id, label]) => (
             <button key={id} onClick={() => { setView(id); setSelected(null); }} style={{ background: "none", border: "none", borderBottom: view === id ? "2.5px solid #c45f82" : "2.5px solid transparent", padding: "13px 16px", cursor: "pointer", fontSize: 13, fontWeight: view === id ? 800 : 500, color: view === id ? "#c45f82" : "#64748b", marginBottom: -1, transition: "all .2s", fontFamily: "'Nunito',sans-serif" }}>
               {label}
               {id === "painel" && overdueCount > 0 && <span style={{ marginLeft: 6, background: "#EF4444", color: "#fff", borderRadius: 8, padding: "1px 6px", fontSize: 9, fontWeight: 800 }}>{overdueCount}</span>}
@@ -1035,6 +1036,8 @@ export default function App() {
           <DetalhePaciente patient={selected} onBack={() => setSelected(null)} onUpdate={updatePatient} />
         ) : view === "painel" ? (
           <PainelRetornos patients={patients} onSelect={setSelected} onUpdate={updatePatient} />
+        ) : view === "agenda" ? (
+          <Agenda patients={patients} />
         ) : view === "caixa" ? (
           <CaixaDia patients={patients} onSavePatient={updatePatient} />
         ) : (
