@@ -719,18 +719,18 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
           ["voz",         p7, "Voz / IA",    "DUNGA"   ],
         ].map(([id, img, label, dwarf]) => (
           <button key={id} onClick={() => setTab(id)} style={{
-            flex: "0 0 auto", minWidth: 80, padding: "10px 6px 8px",
-            borderRadius: 16, border: "none", cursor: "pointer",
+            flex: "0 0 auto", minWidth: 110, padding: "12px 8px 10px",
+            borderRadius: 18, border: "none", cursor: "pointer",
             background: tab === id ? "linear-gradient(135deg,#c45f82,#8b3458)" : "#fff",
             color: tab === id ? "#fff" : "#8b3458",
             fontFamily: "'Nunito',sans-serif",
-            boxShadow: tab === id ? "0 4px 16px rgba(196,95,130,0.45)" : "0 1px 4px rgba(0,0,0,0.06)",
-            transform: tab === id ? "translateY(-2px)" : "translateY(0)",
+            boxShadow: tab === id ? "0 6px 20px rgba(196,95,130,0.5)" : "0 1px 4px rgba(0,0,0,0.06)",
+            transform: tab === id ? "translateY(-3px)" : "translateY(0)",
             transition: "all 0.2s",
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
           }}>
-            <div style={{ background: "rgba(255,255,255,0.6)", borderRadius: 12, padding: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <img src={img} alt={dwarf} style={{ width: 64, height: 64, objectFit: "contain", borderRadius: 12, filter: tab === id ? "brightness(1.05)" : "none", transition: "filter 0.2s" }} />
+            <div style={{ background: "rgba(255,255,255,0.6)", borderRadius: 14, padding: 6, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <img src={img} alt={dwarf} style={{ width: 96, height: 96, objectFit: "contain", borderRadius: 10, filter: tab === id ? "brightness(1.05)" : "none", transition: "filter 0.2s" }} />
             </div>
             <span style={{ fontSize: 9, fontWeight: 700, lineHeight: 1.2 }}>{label}</span>
             <span style={{ fontSize: 7, fontWeight: 800, letterSpacing: 0.8, opacity: tab === id ? 1 : 0.5 }}>{dwarf}</span>
