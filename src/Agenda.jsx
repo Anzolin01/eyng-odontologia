@@ -10,10 +10,10 @@ const END_H    = 19;
 const PROFS    = ["Dra. Caroline", "Dr. João Beno"];
 const DURACOES = [30, 45, 60, 90, 120];
 
-// ── Contatos dos profissionais (atualize com os números reais) ──
+// ── Contatos dos profissionais ──
 const PROF_CONTATOS = {
-  "Dra. Caroline": { phone: "5549999999901", apelido: "Dra. Carol" },
-  "Dr. João Beno":  { phone: "5549999999902", apelido: "Dr. João"  },
+  "Dra. Caroline": { phone: "5549984364313", apelido: "Dra. Carol" },
+  "Dr. João Beno":  { phone: "5549999324034", apelido: "Dr. João"  },
 };
 
 const SLOTS = [];
