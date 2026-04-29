@@ -31,12 +31,12 @@ const SP = {
   "Clínico Geral":  { from: "#64748B", to: "#94A3B8", emoji: "🩺" },
 };
 
-const TODAY = new Date("2026-04-10");
+const TODAY = new Date();
 let _id = 200;
 const uid = () => String(++_id);
-const getDays = (s) => Math.ceil((new Date(s) - TODAY) / 86400000);
+const getDays = (s) => Math.ceil((new Date(s + "T12:00:00") - TODAY) / 86400000);
 const fmtDate = (s) => { if (!s) return "—"; const [y, m, d] = s.split("-"); return `${d}/${m}/${y}`; };
-const todayISO = () => "2026-04-10";
+const todayISO = () => new Date().toISOString().split("T")[0];
 const addWeeks = (w) => { const d = new Date(TODAY); d.setDate(d.getDate() + w * 7); return d.toISOString().split("T")[0]; };
 
 const PATIENTS = [
@@ -994,7 +994,7 @@ export default function App() {
             </div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: 20, padding: "4px 12px", fontSize: 11, color: "#fff", fontWeight: 700 }}>10 · 04 · 2026</div>
+            <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: 20, padding: "4px 12px", fontSize: 11, color: "#fff", fontWeight: 700 }}>{new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }).replace(/\//g, " · ")}</div>
             {!isDev && <button onClick={() => supabase.auth.signOut()} style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 20, padding: "4px 12px", color: "#fff", fontSize: 10, cursor: "pointer", fontWeight: 700, letterSpacing: 1 }}>SAIR</button>}
           </div>
         </div>
