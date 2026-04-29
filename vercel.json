@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/interpret-voice", "destination": "/api/interpret-voice" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
