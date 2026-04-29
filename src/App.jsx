@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "./supabase";
 import Odontograma2D from "./Odontograma2D";
+import FinanceiroModule, { calcResumo } from "./FinanceiroModule";
 import p1 from "./assets/personagens/1_sabio_prontuario.png";
 import p2 from "./assets/personagens/2_sonolento_historico.png";
 import p3 from "./assets/personagens/3_atento_notas.png";
@@ -833,10 +834,8 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
       )}
 
       {tab === "financeiro" && (
-        <div style={{ animation: "fadeIn 0.3s ease", textAlign: "center", padding: "48px 20px" }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>😠</div>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 20, color: "#8b3458", marginBottom: 6 }}>Zangado está trabalhando nisso</div>
-          <div style={{ fontSize: 13, color: "#c45f82", fontWeight: 600 }}>Módulo financeiro — Em breve</div>
+        <div style={{ animation: "fadeIn 0.3s ease" }}>
+          <FinanceiroModule patient={p} onSave={save} />
         </div>
       )}
 
@@ -962,6 +961,15 @@ export default function App() {
 
   const overdueCount = patients.filter(p => p.returnStatus === "overdue" || p.returnStatus === "due_today").length;
   const pendingCount = patients.filter(p => p.financialStatus === "Pendente").length;
+  const mesAtual = new Date().toISOString().slice(0, 7);
+  const totalRecebidoMes = patients.reduce((sum, p) => {
+    const pags = p.financeiro?.pagamentos || [];
+    return sum + pags.filter(x => x.data?.startsWith(mesAtual)).reduce((s, x) => s + (x.valor || 0), 0);
+  }, 0);
+  const totalInadimplente = patients.reduce((sum, p) => {
+    const { saldo } = calcResumo(p.financeiro);
+    return sum + (saldo > 0 ? saldo : 0);
+  }, 0);
 
   if (authLoading) return <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#c45f82,#8b3458)" }} />;
   if (!isDev && !user) return <LoginScreen />;
@@ -990,14 +998,16 @@ export default function App() {
         </div>
 
         {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10 }}>
           {[
-            { v: patients.length, l: "Pacientes", c: "#c45f82", icon: "👥" },
-            { v: overdueCount, l: "Atrasados", c: "#EF4444", icon: "⏰" },
-            { v: pendingCount, l: "Pendências", c: "#F59E0B", icon: "💰" },
+            { v: patients.length, l: "Pacientes", c: "#c45f82", val: null },
+            { v: overdueCount, l: "Atrasados", c: "#EF4444", val: null },
+            { v: pendingCount, l: "Inadimpl.", c: "#d97706", val: null },
+            { v: null, l: "Recebido/mês", c: "#16a34a", val: `R$ ${totalRecebidoMes.toLocaleString("pt-BR",{minimumFractionDigits:0})}` },
+            { v: null, l: "A receber", c: "#dc2626", val: `R$ ${totalInadimplente.toLocaleString("pt-BR",{minimumFractionDigits:0})}` },
           ].map((s, i) => (
-            <div key={i} style={{ background: "rgba(255,255,255,0.95)", borderRadius: 12, padding: "6px 8px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08)", maxHeight: 60 }}>
-              <div style={{ fontSize: 20, fontWeight: 900, color: s.c, lineHeight: 1, fontFamily: "'Nunito',sans-serif" }}>{s.v}</div>
+            <div key={i} style={{ background: "rgba(255,255,255,0.95)", borderRadius: 12, padding: "6px 8px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
+              <div style={{ fontSize: s.val ? 13 : 20, fontWeight: 900, color: s.c, lineHeight: 1, fontFamily: "'Nunito',sans-serif" }}>{s.val ?? s.v}</div>
               <div style={{ fontSize: 9, color: "#94a3b8", fontWeight: 700, letterSpacing: 0.5, marginTop: 3 }}>{s.l.toUpperCase()}</div>
             </div>
           ))}
