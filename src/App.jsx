@@ -13,7 +13,7 @@ const G = {
 
 // ── CORES POR ESPECIALIDADE ──
 const SP = {
-  "Ortodontia":     { from: "#7C3AED", to: "#A78BFA", emoji: "🦷" },
+  "Ortodontia":     { from: "#c45f82", to: "#e8a0b8", emoji: "🦷" },
   "Implantodontia": { from: "#0EA5E9", to: "#38BDF8", emoji: "🔩" },
   "Estética":       { from: "#EC4899", to: "#F9A8D4", emoji: "✨" },
   "Prótese":        { from: "#F59E0B", to: "#FCD34D", emoji: "🦷" },
@@ -40,11 +40,11 @@ const PATIENTS = [
 
 // ── CSS ──
 const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Cormorant+Garamond:wght@300;400;600;700&family=Inter:wght@400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Nunito:wght@400;500;600;700;800;900&family=Cormorant+Garamond:wght@300;400;600;700&family=Inter:wght@400;500;600&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Nunito', sans-serif; background: #f3f0ff; }
+  body { font-family: 'Nunito', sans-serif; background: #fdf4f6; }
   ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb { background: #e8a0b8; border-radius: 4px; }
   input::placeholder { color: #cbd5e1; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   @keyframes fadeInUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
@@ -482,10 +482,10 @@ function Splash({ onDone }) {
     return () => t.forEach(clearTimeout);
   }, []);
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,#667eea 0%,#764ba2 50%,#f093fb 100%)", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,#c45f82 0%,#8b3458 50%,#f093fb 100%)", flexDirection: "column" }}>
       <style>{css}</style>
       <div style={{ width: 80, height: 80, borderRadius: 24, background: "rgba(255,255,255,0.95)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24, animation: p >= 1 ? "pop 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards, pulse2 2s ease-in-out 1s infinite" : "none", opacity: p >= 1 ? 1 : 0, boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}>
-        <span style={{ fontSize: 36, fontFamily: "'Cormorant Garamond',serif", fontWeight: 600, color: "#764ba2" }}>E</span>
+        <span style={{ fontSize: 36, fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontWeight: 600, color: "#8b3458" }}>E</span>
       </div>
       <div style={{ opacity: p >= 2 ? 1 : 0, transform: p >= 2 ? "translateY(0)" : "translateY(12px)", transition: "all 0.5s ease", textAlign: "center" }}>
         <div style={{ fontSize: 30, fontWeight: 900, color: "#fff", fontFamily: "'Nunito',sans-serif", letterSpacing: 1 }}>Eyng</div>
@@ -545,7 +545,7 @@ function PatientCard({ p, onClick, index, onContact, onReturn }) {
       <div style={{ padding: "12px 18px 14px", background: stCfg.bg, display: "flex", gap: 8, flexWrap: "wrap" }}>
         <BTN small label="WhatsApp" icon="💬" color="#25D366" onClick={() => window.open(`https://wa.me/55${p.phone.replace(/\D/g, "")}?text=Olá ${p.name.split(" ")[0]}, tudo bem? Entramos em contato para agendar seu retorno na Eyng Odontologia 😊`)} />
         <BTN small label="Ligar" icon="📞" color="#0EA5E9" onClick={() => window.open(`tel:${p.phone.replace(/\D/g, "")}`)} />
-        {onContact && <BTN small label="Contato" icon="📋" color="#7C3AED" onClick={onContact} />}
+        {onContact && <BTN small label="Contato" icon="📋" color="#c45f82" onClick={onContact} />}
         <span title="Em breve" style={{ opacity: 0.5, cursor: "not-allowed" }}><BTN small label="Agendar" icon="📅" color="#94a3b8" bg="#f1f5f9" onClick={() => {}} /></span>
         <BTN small label="Ver ficha →" icon="" color="#64748b" bg="#e2e8f0" onClick={onClick} />
       </div>
@@ -629,7 +629,7 @@ function ListaPacientes({ patients, onSelect }) {
         <input type="text" placeholder="Buscar paciente..." value={search} onChange={e => setSearch(e.target.value)} style={{ border: "none", outline: "none", fontSize: 14, width: "100%", color: "#334155", fontFamily: "'Nunito',sans-serif" }} />
       </div>
       <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-        {[["all", `Todos (${patients.length})`, "#7C3AED"], ["overdue", `⏰ Atrasados (${overdueCount})`, "#EF4444"], ["pending", `💰 Cobranças (${pendingCount})`, "#F59E0B"], ["caroline", "👩‍⚕️ Dra. Caroline", "#EC4899"], ["joao", "👨‍⚕️ Dr. João Beno", "#0EA5E9"]].map(([id, label, color]) => (
+        {[["all", `Todos (${patients.length})`, "#c45f82"], ["overdue", `⏰ Atrasados (${overdueCount})`, "#EF4444"], ["pending", `💰 Cobranças (${pendingCount})`, "#F59E0B"], ["caroline", "👩‍⚕️ Dra. Caroline", "#EC4899"], ["joao", "👨‍⚕️ Dr. João Beno", "#0EA5E9"]].map(([id, label, color]) => (
           <button key={id} onClick={() => setFilter(id)} style={{ padding: "7px 16px", borderRadius: 20, border: filter === id ? "none" : "1.5px solid #e2e8f0", background: filter === id ? color : "#fff", color: filter === id ? "#fff" : "#64748b", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Nunito',sans-serif", boxShadow: filter === id ? `0 4px 14px ${color}44` : "none", transition: "all 0.2s" }}>{label}</button>
         ))}
       </div>
@@ -656,7 +656,7 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
 
   return (
     <div style={{ animation: "slideUp 0.35s ease" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 800, color: sp.from, fontFamily: "'Nunito',sans-serif", marginBottom: 20, padding: 0 }}>← Voltar</button>
+      <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: "#8b3458", fontFamily: "'Nunito',sans-serif", marginBottom: 20, padding: 0 }}>← Voltar</button>
 
       {/* Header do paciente */}
       <div style={{ background: `linear-gradient(135deg,${sp.from},${sp.to})`, borderRadius: 24, padding: "22px 22px 18px", marginBottom: 16, boxShadow: `0 12px 40px ${sp.from}44` }}>
@@ -665,7 +665,7 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
             <span style={{ color: "#fff", fontWeight: 900, fontSize: 24, fontFamily: "'Nunito',sans-serif" }}>{initials}</span>
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Nunito',sans-serif" }}>{p.name}</div>
+            <div style={{ fontSize: 22, fontWeight: 600, color: "#fff", fontFamily: "'Playfair Display',serif", fontStyle: "italic" }}>{p.name}</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", fontFamily: "'Nunito',sans-serif", marginTop: 2 }}>{sp.emoji} {p.specialty} · {p.professional}</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginTop: 2 }}>{p.phone} · Nasc: {p.birth}</div>
             <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -700,10 +700,32 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
         </button>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
-        {[["prontuario", "📋 Prontuário"], ["historico", `📅 Histórico (${p.procedures.length})`], ["notas", `💡 Notas (${p.notes.length})`], ["contatos", `📞 Contatos (${p.contactLog.length})`], ["odontograma", "🦷 Odontograma"]].map(([id, label]) => (
-          <button key={id} onClick={() => setTab(id)} style={{ flex: 1, padding: "10px 6px", borderRadius: 14, border: "none", cursor: "pointer", background: tab === id ? `linear-gradient(135deg,${sp.from},${sp.to})` : "#f1f5f9", color: tab === id ? "#fff" : "#64748b", fontSize: 11, fontWeight: 700, fontFamily: "'Nunito',sans-serif", boxShadow: tab === id ? `0 4px 16px ${sp.from}44` : "none", transition: "all 0.2s" }}>{label}</button>
+      {/* Tabs — 7 Anões */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 18, overflowX: "auto", paddingBottom: 4 }}>
+        {[
+          ["prontuario",  "🧙",  "Prontuário",  "MESTRE"  ],
+          ["historico",   "😴",  `Histórico`,   "SONECA"  ],
+          ["notas",       "🤧",  `Notas`,       "ATCHIM"  ],
+          ["contatos",    "😊",  "Contatos",    "FELIZ"   ],
+          ["odontograma", "😍",  "Odontograma", "DENGOSO" ],
+          ["financeiro",  "😠",  "Financeiro",  "ZANGADO" ],
+          ["voz",         "🤐",  "Voz / IA",    "DUNGA"   ],
+        ].map(([id, emoji, label, dwarf]) => (
+          <button key={id} onClick={() => setTab(id)} style={{
+            flex: "0 0 auto", minWidth: 64, padding: "8px 6px 6px",
+            borderRadius: 14, border: "none", cursor: "pointer",
+            background: tab === id ? "linear-gradient(135deg,#c45f82,#8b3458)" : "#fff",
+            color: tab === id ? "#fff" : "#8b3458",
+            fontFamily: "'Nunito',sans-serif",
+            boxShadow: tab === id ? "0 4px 16px rgba(196,95,130,0.45)" : "0 1px 4px rgba(0,0,0,0.06)",
+            transform: tab === id ? "translateY(-2px)" : "translateY(0)",
+            transition: "all 0.2s",
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+          }}>
+            <span style={{ fontSize: 18, lineHeight: 1 }}>{emoji}</span>
+            <span style={{ fontSize: 9, fontWeight: 700, lineHeight: 1.2 }}>{label}</span>
+            <span style={{ fontSize: 7, fontWeight: 800, letterSpacing: 0.8, opacity: tab === id ? 1 : 0.5 }}>{dwarf}</span>
+          </button>
         ))}
       </div>
 
@@ -801,6 +823,25 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
         </div>
       )}
 
+      {tab === "financeiro" && (
+        <div style={{ animation: "fadeIn 0.3s ease", textAlign: "center", padding: "48px 20px" }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>😠</div>
+          <div style={{ fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 20, color: "#8b3458", marginBottom: 6 }}>Zangado está trabalhando nisso</div>
+          <div style={{ fontSize: 13, color: "#c45f82", fontWeight: 600 }}>Módulo financeiro — Em breve</div>
+        </div>
+      )}
+
+      {tab === "voz" && (
+        <div style={{ animation: "fadeIn 0.3s ease", background: "#fff", borderRadius: 16, padding: 18, boxShadow: "0 2px 12px rgba(196,95,130,0.1)" }}>
+          <div style={{ fontSize: 10, color: "#c45f82", fontWeight: 800, marginBottom: 12, letterSpacing: 1 }}>🤐 DUNGA · REGISTRAR POR VOZ</div>
+          <VoiceModule
+            patient={p}
+            onSave={updated => { save(updated); setTab("prontuario"); }}
+            onClose={() => setTab("prontuario")}
+          />
+        </div>
+      )}
+
       {modal === "nota" && <ModalNota onSave={n => { save({ ...p, notes: [...p.notes, n] }); setModal(null); }} onClose={() => setModal(null)} />}
       {modal === "procedimento" && <ModalProcedimento patient={p} onSave={pr => { save({ ...p, procedures: [pr, ...p.procedures], lastVisit: pr.date }); setModal(null); }} onClose={() => setModal(null)} />}
       {modal === "retorno" && <ModalRetorno patient={p} onSave={date => { const days = getDays(date); save({ ...p, nextReturn: date, returnStatus: days < 0 ? "overdue" : days === 0 ? "due_today" : "ok" }); setModal(null); }} onClose={() => setModal(null)} />}
@@ -834,12 +875,12 @@ function LoginScreen() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,#667eea 0%,#764ba2 100%)" }}>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,#c45f82 0%,#8b3458 100%)" }}>
       <style>{css}</style>
       <div style={{ width: "100%", maxWidth: 380, padding: "0 24px" }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <div style={{ width: 72, height: 72, borderRadius: 20, background: "rgba(255,255,255,0.95)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", animation: "pop 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards" }}>
-            <span style={{ fontSize: 32, fontFamily: "'Cormorant Garamond',serif", fontWeight: 600, color: "#764ba2" }}>E</span>
+            <span style={{ fontSize: 32, fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontWeight: 600, color: "#8b3458" }}>E</span>
           </div>
           <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", fontFamily: "'Nunito',sans-serif", letterSpacing: 1 }}>Eyng</div>
           <div style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", fontFamily: "'Nunito',sans-serif", fontWeight: 600, letterSpacing: 3 }}>ODONTOLOGIA</div>
@@ -851,12 +892,12 @@ function LoginScreen() {
           <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <input type="email" placeholder="E-mail" value={email} onChange={e => setEmail(e.target.value)} required
               style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 12, padding: "13px 16px", color: "#1e293b", fontSize: 14, outline: "none", fontFamily: "'Nunito',sans-serif", transition: "border-color 0.2s" }}
-              onFocus={e => e.target.style.borderColor = "#7C3AED"} onBlur={e => e.target.style.borderColor = "#e2e8f0"} />
+              onFocus={e => e.target.style.borderColor = "#c45f82"} onBlur={e => e.target.style.borderColor = "#e2e8f0"} />
             <input type="password" placeholder="Senha" value={password} onChange={e => setPassword(e.target.value)} required
               style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 12, padding: "13px 16px", color: "#1e293b", fontSize: 14, outline: "none", fontFamily: "'Nunito',sans-serif", transition: "border-color 0.2s" }}
-              onFocus={e => e.target.style.borderColor = "#7C3AED"} onBlur={e => e.target.style.borderColor = "#e2e8f0"} />
+              onFocus={e => e.target.style.borderColor = "#c45f82"} onBlur={e => e.target.style.borderColor = "#e2e8f0"} />
             {error && <div style={{ color: "#EF4444", fontSize: 12, textAlign: "center", fontFamily: "'Nunito',sans-serif" }}>{error}</div>}
-            <button type="submit" disabled={loading} style={{ background: "linear-gradient(135deg,#667eea,#764ba2)", color: "#fff", border: "none", borderRadius: 12, padding: "14px", fontSize: 14, fontWeight: 800, fontFamily: "'Nunito',sans-serif", letterSpacing: 1, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, marginTop: 4, boxShadow: "0 8px 24px rgba(102,126,234,0.5)" }}>
+            <button type="submit" disabled={loading} style={{ background: "linear-gradient(135deg,#c45f82,#8b3458)", color: "#fff", border: "none", borderRadius: 12, padding: "14px", fontSize: 14, fontWeight: 800, fontFamily: "'Nunito',sans-serif", letterSpacing: 1, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, marginTop: 4, boxShadow: "0 8px 24px rgba(196,95,130,0.5)" }}>
               {loading ? "ENTRANDO..." : "ENTRAR"}
             </button>
           </form>
@@ -913,20 +954,20 @@ export default function App() {
   const overdueCount = patients.filter(p => p.returnStatus === "overdue" || p.returnStatus === "due_today").length;
   const pendingCount = patients.filter(p => p.financialStatus === "Pendente").length;
 
-  if (authLoading) return <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#667eea,#764ba2)" }} />;
+  if (authLoading) return <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#c45f82,#8b3458)" }} />;
   if (!isDev && !user) return <LoginScreen />;
   if (splash || loading) return <Splash onDone={() => setSplash(false)} />;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f3f0ff" }}>
+    <div style={{ minHeight: "100vh", background: "#fdf4f6" }}>
       <style>{css}</style>
 
       {/* HEADER */}
-      <div style={{ background: "linear-gradient(135deg,#667eea 0%,#764ba2 100%)", padding: "18px 24px 22px", boxShadow: "0 4px 24px rgba(102,126,234,0.45)" }}>
+      <div style={{ background: "linear-gradient(135deg,#c45f82 0%,#8b3458 100%)", padding: "18px 24px 22px", boxShadow: "0 4px 24px rgba(196,95,130,0.45)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 42, height: 42, borderRadius: 14, background: "rgba(255,255,255,0.95)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}>
-              <span style={{ fontSize: 20, fontFamily: "'Cormorant Garamond',serif", fontWeight: 600, color: "#764ba2" }}>E</span>
+              <span style={{ fontSize: 20, fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontWeight: 600, color: "#8b3458" }}>E</span>
             </div>
             <div>
               <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", lineHeight: 1, fontFamily: "'Nunito',sans-serif" }}>Eyng</div>
@@ -942,7 +983,7 @@ export default function App() {
         {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
           {[
-            { v: patients.length, l: "Pacientes", c: "#7C3AED", icon: "👥" },
+            { v: patients.length, l: "Pacientes", c: "#c45f82", icon: "👥" },
             { v: overdueCount, l: "Atrasados", c: "#EF4444", icon: "⏰" },
             { v: pendingCount, l: "Pendências", c: "#F59E0B", icon: "💰" },
           ].map((s, i) => (
@@ -958,13 +999,13 @@ export default function App() {
       {!selected && (
         <div style={{ background: "#fff", borderBottom: "1px solid #f1f5f9", padding: "0 20px", display: "flex", alignItems: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
           {[["painel", "🚨 Retornos"], ["pacientes", "👥 Pacientes"]].map(([id, label]) => (
-            <button key={id} onClick={() => setView(id)} style={{ background: "none", border: "none", borderBottom: view === id ? "2.5px solid #7C3AED" : "2.5px solid transparent", padding: "13px 16px", cursor: "pointer", fontSize: 13, fontWeight: view === id ? 800 : 500, color: view === id ? "#7C3AED" : "#64748b", marginBottom: -1, transition: "all .2s", fontFamily: "'Nunito',sans-serif" }}>
+            <button key={id} onClick={() => setView(id)} style={{ background: "none", border: "none", borderBottom: view === id ? "2.5px solid #c45f82" : "2.5px solid transparent", padding: "13px 16px", cursor: "pointer", fontSize: 13, fontWeight: view === id ? 800 : 500, color: view === id ? "#c45f82" : "#64748b", marginBottom: -1, transition: "all .2s", fontFamily: "'Nunito',sans-serif" }}>
               {label}
               {id === "painel" && overdueCount > 0 && <span style={{ marginLeft: 6, background: "#EF4444", color: "#fff", borderRadius: 8, padding: "1px 6px", fontSize: 9, fontWeight: 800 }}>{overdueCount}</span>}
             </button>
           ))}
           <div style={{ flex: 1 }} />
-          <button onClick={() => setModalNovo(true)} style={{ background: "linear-gradient(135deg,#667eea,#764ba2)", color: "#fff", border: "none", borderRadius: 20, padding: "7px 16px", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "'Nunito',sans-serif", margin: "6px 0" }}>+ Novo Paciente</button>
+          <button onClick={() => setModalNovo(true)} style={{ background: "linear-gradient(135deg,#c45f82,#8b3458)", color: "#fff", border: "none", borderRadius: 20, padding: "7px 16px", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "'Nunito',sans-serif", margin: "6px 0" }}>+ Novo Paciente</button>
         </div>
       )}
 
