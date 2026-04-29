@@ -521,7 +521,7 @@ function PatientCard({ p, onClick, index, onContact, onReturn }) {
     <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
       style={{ background: "#fff", borderRadius: 20, overflow: "hidden", boxShadow: hov ? "0 16px 48px rgba(0,0,0,0.14)" : "0 4px 16px rgba(0,0,0,0.07)", transform: hov ? "translateY(-3px)" : "translateY(0)", transition: "all 0.25s cubic-bezier(0.34,1.56,0.64,1)", cursor: "pointer", animation: `cardIn 0.4s ease ${index * 0.07}s both` }}>
 
-      <div onClick={onClick} style={{ background: `linear-gradient(135deg,${sp.from},${sp.to})`, padding: "14px 18px" }}>
+      <div onClick={onClick} style={{ background: "linear-gradient(135deg,#c45f82,#8b3458)", padding: "14px 18px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 46, height: 46, borderRadius: "50%", background: "rgba(255,255,255,0.25)", border: "2.5px solid rgba(255,255,255,0.85)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -666,7 +666,7 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
       <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: "#8b3458", fontFamily: "'Nunito',sans-serif", marginBottom: 20, padding: 0 }}>← Voltar</button>
 
       {/* Header do paciente */}
-      <div style={{ background: `linear-gradient(135deg,${sp.from},${sp.to})`, borderRadius: 24, padding: "22px 22px 18px", marginBottom: 16, boxShadow: `0 12px 40px ${sp.from}44` }}>
+      <div style={{ background: "linear-gradient(135deg,#c45f82,#8b3458)", borderRadius: 24, padding: "22px 22px 18px", marginBottom: 16, boxShadow: "0 12px 40px rgba(196,95,130,0.35)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
           <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(255,255,255,0.25)", border: "3px solid rgba(255,255,255,0.9)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <span style={{ color: "#fff", fontWeight: 900, fontSize: 24, fontFamily: "'Nunito',sans-serif" }}>{initials}</span>
@@ -719,17 +719,19 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
           ["voz",         p7, "Voz / IA",    "DUNGA"   ],
         ].map(([id, img, label, dwarf]) => (
           <button key={id} onClick={() => setTab(id)} style={{
-            flex: "0 0 auto", minWidth: 68, padding: "8px 6px 6px",
-            borderRadius: 14, border: "none", cursor: "pointer",
+            flex: "0 0 auto", minWidth: 80, padding: "10px 6px 8px",
+            borderRadius: 16, border: "none", cursor: "pointer",
             background: tab === id ? "linear-gradient(135deg,#c45f82,#8b3458)" : "#fff",
             color: tab === id ? "#fff" : "#8b3458",
             fontFamily: "'Nunito',sans-serif",
             boxShadow: tab === id ? "0 4px 16px rgba(196,95,130,0.45)" : "0 1px 4px rgba(0,0,0,0.06)",
             transform: tab === id ? "translateY(-2px)" : "translateY(0)",
             transition: "all 0.2s",
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
           }}>
-            <img src={img} alt={dwarf} style={{ width: 36, height: 36, objectFit: "contain", borderRadius: 8, filter: tab === id ? "brightness(1.1)" : "none", transition: "filter 0.2s" }} />
+            <div style={{ background: "rgba(255,255,255,0.6)", borderRadius: 12, padding: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <img src={img} alt={dwarf} style={{ width: 64, height: 64, objectFit: "contain", borderRadius: 12, filter: tab === id ? "brightness(1.05)" : "none", transition: "filter 0.2s" }} />
+            </div>
             <span style={{ fontSize: 9, fontWeight: 700, lineHeight: 1.2 }}>{label}</span>
             <span style={{ fontSize: 7, fontWeight: 800, letterSpacing: 0.8, opacity: tab === id ? 1 : 0.5 }}>{dwarf}</span>
           </button>
