@@ -719,7 +719,7 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
           ["contatos",    p4, "Contatos",    "FELIZ"   ],
           ["odontograma", p5, "Odontograma", "DENGOSO" ],
           ["financeiro",  p6, "Financeiro",  "ZANGADO" ],
-          ["arquivos",    p7, "Arquivos",    "TÍMIDO"  ],
+          ["arquivos",    p7, "Arquivos",    "DUNGA"   ],
         ].map(([id, img, label, dwarf]) => (
           <button key={id} onClick={() => setTab(id)} style={{
             flex: "1 1 0", minWidth: 100, padding: "12px 8px 10px",
@@ -971,7 +971,7 @@ function AbaArquivos({ patient, onSave }) {
     <div>
       {/* Header */}
       <div style={{ marginBottom:16 }}>
-        <div style={{ fontSize:10, color:"#c45f82", fontWeight:800, letterSpacing:1 }}>😶 TÍMIDO · ARQUIVOS DO PACIENTE</div>
+        <div style={{ fontSize:10, color:"#c45f82", fontWeight:800, letterSpacing:1 }}>😠 DUNGA · ARQUIVOS DO PACIENTE</div>
         <div style={{ fontSize:12, color:G.g500, marginTop:2 }}>
           {arquivos.length} arquivo{arquivos.length !== 1 ? "s" : ""}
           {fila.length > 0 && <span style={{ color:"#8b5cf6", marginLeft:6 }}>· {fila.length} enviando…</span>}
