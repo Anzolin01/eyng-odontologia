@@ -6,8 +6,10 @@ import { SERVICOS } from "./servicos";
 const SLOT_H   = 56;   // px por slot de 30min
 const SLOT_MIN = 30;
 const START_H  = 8;
-const END_H    = 19;
+const END_H    = 18;   // Clínica fecha às 18h
 const PROFS    = ["Dra. Caroline", "Dr. João Beno"];
+// Intervalo de almoço: 12:00–13:30
+const LUNCH    = ["12:00","12:30","13:00"];
 const DURACOES = [30, 45, 60, 90, 120];
 
 // ── Contatos dos profissionais ──
@@ -588,24 +590,38 @@ export default function Agenda({ patients }) {
 
             {/* Coluna de horários */}
             <div>
-              {SLOTS.map((s,i)=>(
-                <div key={s} style={{height:SLOT_H,display:"flex",alignItems:"flex-start",justifyContent:"flex-end",paddingRight:10,paddingTop:4,borderBottom:`1px solid ${i%2===1?"#fdf4f6":"#fce8ee"}`}}>
-                  {i%2===0 && <span style={{fontSize:11,fontWeight:700,color:C.gray}}>{s}</span>}
-                </div>
-              ))}
+              {SLOTS.map((s,i)=>{
+                const isLunch = LUNCH.includes(s);
+                return (
+                  <div key={s} style={{height:SLOT_H,display:"flex",alignItems:"flex-start",justifyContent:"flex-end",paddingRight:10,paddingTop:4,borderBottom:`1px solid ${i%2===1?"#fdf4f6":"#fce8ee"}`,background:isLunch?"#fffbeb":"transparent"}}>
+                    {i%2===0 && <span style={{fontSize:11,fontWeight:700,color:isLunch?"#d97706":C.gray}}>{s}</span>}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Coluna de cada profissional */}
             {PROFS.map(prof=>(
               <div key={prof} style={{borderLeft:"1px solid #fce8ee",position:"relative",minHeight:SLOTS.length*SLOT_H}}>
                 {/* Slots clicáveis */}
-                {SLOTS.map((s,i)=>(
-                  <div key={s} onClick={()=>setModalNovo({hora:s,profissional:prof})}
-                    style={{height:SLOT_H,borderBottom:`1px solid ${i%2===1?"#fdf4f6":"#fce8ee"}`,cursor:"pointer",transition:"background .1s"}}
-                    onMouseEnter={e=>e.currentTarget.style.background=`${C.primary}08`}
-                    onMouseLeave={e=>e.currentTarget.style.background="transparent"}
-                  />
-                ))}
+                {SLOTS.map((s,i)=>{
+                  const isLunch = LUNCH.includes(s);
+                  const isFirst = s === LUNCH[0];
+                  return (
+                    <div key={s}
+                      onClick={()=>!isLunch && setModalNovo({hora:s,profissional:prof})}
+                      style={{height:SLOT_H,borderBottom:`1px solid ${i%2===1?"#fdf4f6":"#fce8ee"}`,cursor:isLunch?"default":"pointer",transition:"background .1s",background:isLunch?"#fffbeb":"transparent",position:"relative"}}
+                      onMouseEnter={e=>{ if(!isLunch) e.currentTarget.style.background=`${C.primary}08`; }}
+                      onMouseLeave={e=>{ if(!isLunch) e.currentTarget.style.background=isLunch?"#fffbeb":"transparent"; }}
+                    >
+                      {isFirst && prof===PROFS[0] && (
+                        <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",zIndex:1}}>
+                          <span style={{fontSize:9,fontWeight:800,color:"#d97706",letterSpacing:1,opacity:0.7}}>☕ ALMOÇO 12h–13h30</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
 
                 {/* Linha "agora" */}
                 {isToday && (() => {

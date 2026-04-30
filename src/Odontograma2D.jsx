@@ -1,10 +1,16 @@
 import { useState } from "react";
 
 /* ── Arcos FDI ─────────────────────────────────────────── */
+// Permanentes
 const UPPER_R = [18,17,16,15,14,13,12,11]; // Q1 – Superior direito
 const UPPER_L = [21,22,23,24,25,26,27,28]; // Q2 – Superior esquerdo
 const LOWER_L = [31,32,33,34,35,36,37,38]; // Q3 – Inferior esquerdo
 const LOWER_R = [48,47,46,45,44,43,42,41]; // Q4 – Inferior direito
+// Decíduos (dentes de leite)
+const UPPER_R_DEC = [55,54,53,52,51]; // Q5 – Superior direito
+const UPPER_L_DEC = [61,62,63,64,65]; // Q6 – Superior esquerdo
+const LOWER_L_DEC = [71,72,73,74,75]; // Q7 – Inferior esquerdo
+const LOWER_R_DEC = [85,84,83,82,81]; // Q8 – Inferior direito
 
 /* ── Condições ─────────────────────────────────────────── */
 const COND = {
@@ -25,26 +31,34 @@ const SURF_LABELS = {
 };
 
 /* ── Helpers ───────────────────────────────────────────── */
-const isUpper   = n => n < 30;
+const isDec     = n => n >= 50;
+const isUpper   = n => (n >= 11 && n <= 28) || (n >= 51 && n <= 65);
 const quadrant  = n => {
-  if (n >= 11 && n <= 18) return 1;
-  if (n >= 21 && n <= 28) return 2;
-  if (n >= 31 && n <= 38) return 3;
+  if ((n >= 11 && n <= 18) || (n >= 51 && n <= 55)) return 1;
+  if ((n >= 21 && n <= 28) || (n >= 61 && n <= 65)) return 2;
+  if ((n >= 31 && n <= 38) || (n >= 71 && n <= 75)) return 3;
   return 4;
 };
 const toothType = n => {
   const t = n % 10;
+  if (isDec(n)) {
+    // Decíduos: sem pré-molar; 4,5 = molar, 3 = canino, 1,2 = incisivo
+    if (t >= 4) return "molar";
+    if (t === 3) return "canine";
+    return "incisor";
+  }
   if (t >= 6) return "molar";
   if (t >= 4) return "premolar";
   if (t === 3) return "canine";
   return "incisor";
 };
-const toothW = type =>
-  ({ molar:40, premolar:34, canine:30, incisor:26 })[type] ?? 30;
-const toothLabel = n =>
-  ({8:"3º Molar",7:"2º Molar",6:"1º Molar",
-    5:"2º Pré-Molar",4:"1º Pré-Molar",3:"Canino",
-    2:"Inc. Lateral",1:"Inc. Central"})[n%10] ?? "";
+const toothW = (type, dec=false) =>
+  dec
+    ? ({ molar:32, canine:24, incisor:20 })[type] ?? 22
+    : ({ molar:40, premolar:34, canine:30, incisor:26 })[type] ?? 30;
+const toothLabel = n => isDec(n)
+  ? ({5:"2º Molar Dec.",4:"1º Molar Dec.",3:"Canino Dec.",2:"Inc. Lat. Dec.",1:"Inc. Cen. Dec."})[n%10] ?? ""
+  : ({8:"3º Molar",7:"2º Molar",6:"1º Molar",5:"2º Pré-Molar",4:"1º Pré-Molar",3:"Canino",2:"Inc. Lateral",1:"Inc. Central"})[n%10] ?? "";
 const archName  = n => isUpper(n) ? "Superior" : "Inferior";
 
 const TOOTH_H  = 44;   // altura fixa do corpo do dente
@@ -52,14 +66,14 @@ const NUM_SP   = 13;   // espaço reservado para o número (acima/abaixo)
 
 /* ── ToothSVG ──────────────────────────────────────────── */
 function ToothSVG({ num, surfaces={}, selected, activeSurf,
-                    onToothClick, onSurfClick, scale=1 }) {
+                    onToothClick, onSurfClick, scale=1, dec=false }) {
   const [hov, setHov] = useState(false);
 
   const type  = toothType(num);
   const q     = quadrant(num);
   const isUp  = isUpper(num);
 
-  const W     = toothW(type) * scale;
+  const W     = toothW(type, dec || isDec(num)) * scale;
   const H     = TOOTH_H * scale;
   const ns    = NUM_SP * scale;
   const rx    = 7 * scale;
@@ -218,10 +232,11 @@ function CondBtn({ condKey, active, onClick }) {
 
 /* ── Componente principal ──────────────────────────────── */
 export default function Odontograma2D({ initialData={}, onSave, patientName }) {
-  const [data,     setData]     = useState(initialData);
-  const [selTooth, setSelTooth] = useState(null);
-  const [selSurf,  setSelSurf]  = useState(null);
-  const [markAll,  setMarkAll]  = useState(false);
+  const [data,      setData]      = useState(initialData);
+  const [selTooth,  setSelTooth]  = useState(null);
+  const [selSurf,   setSelSurf]   = useState(null);
+  const [markAll,   setMarkAll]   = useState(false);
+  const [dentition, setDentition] = useState("permanent"); // "permanent" | "deciduous"
 
   const handleToothClick = num => {
     setSelTooth(prev => prev === num ? null : num);
@@ -370,6 +385,20 @@ export default function Odontograma2D({ initialData={}, onSave, patientName }) {
 
       <div style={{ padding:"14px 10px 10px" }}>
 
+        {/* ── Toggle dentição ── */}
+        <div style={{ display:"flex", gap:8, marginBottom:12, justifyContent:"center" }}>
+          {[["permanent","🦷 Permanente"],["deciduous","🧒 Decídua (leite)"]].map(([id, label]) => (
+            <button key={id} onClick={() => { setDentition(id); setSelTooth(null); setSelSurf(null); }} style={{
+              padding:"7px 18px", borderRadius:20, border:"none", cursor:"pointer",
+              background: dentition===id ? "linear-gradient(135deg,#667eea,#764ba2)" : "#f3f0ff",
+              color: dentition===id ? "#fff" : "#7060a0",
+              fontSize:11, fontWeight:800, fontFamily:"Nunito,sans-serif",
+              boxShadow: dentition===id ? "0 3px 12px rgba(118,75,162,0.35)" : "none",
+              transition:"all .2s",
+            }}>{label}</button>
+          ))}
+        </div>
+
         {/* ── Mapa dental ── */}
         <div style={{
           background:"#fff",
@@ -378,40 +407,65 @@ export default function Odontograma2D({ initialData={}, onSave, patientName }) {
           marginBottom:12, overflowX:"auto",
         }}>
 
-          {/* Rótulos quadrantes superiores */}
-          <div style={{ display:"flex", justifyContent:"center", gap:4, marginBottom:6 }}>
-            <QLabel align="right">QUADRANTE I</QLabel>
-            <div style={{ width:10 }}/>
-            <QLabel align="left">QUADRANTE II</QLabel>
-          </div>
+          {dentition === "permanent" ? (<>
+            {/* Rótulos quadrantes superiores */}
+            <div style={{ display:"flex", justifyContent:"center", gap:4, marginBottom:6 }}>
+              <QLabel align="right">QUADRANTE I</QLabel>
+              <div style={{ width:10 }}/>
+              <QLabel align="left">QUADRANTE II</QLabel>
+            </div>
 
-          {/* Arco superior */}
-          <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"center", gap:2 }}>
-            <ArchLine teeth={UPPER_R} alignEnd />
-            <MidSep h={TOOTH_H + NUM_SP} />
-            <ArchLine teeth={UPPER_L} alignEnd />
-          </div>
+            {/* Arco superior */}
+            <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"center", gap:2 }}>
+              <ArchLine teeth={UPPER_R} alignEnd />
+              <MidSep h={TOOTH_H + NUM_SP} />
+              <ArchLine teeth={UPPER_L} alignEnd />
+            </div>
 
-          {/* Linha da arcada */}
-          <div style={{
-            height:2, margin:"5px 16px",
-            background:"linear-gradient(90deg,transparent,#d8c8f0 20%,#764ba2 50%,#d8c8f0 80%,transparent)",
-            borderRadius:1,
-          }}/>
+            {/* Linha da arcada */}
+            <div style={{ height:2, margin:"5px 16px", background:"linear-gradient(90deg,transparent,#d8c8f0 20%,#764ba2 50%,#d8c8f0 80%,transparent)", borderRadius:1 }}/>
 
-          {/* Arco inferior */}
-          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"center", gap:2 }}>
-            <ArchLine teeth={[...LOWER_R].reverse()} />
-            <MidSep h={TOOTH_H + NUM_SP} />
-            <ArchLine teeth={LOWER_L} />
-          </div>
+            {/* Arco inferior */}
+            <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"center", gap:2 }}>
+              <ArchLine teeth={[...LOWER_R].reverse()} />
+              <MidSep h={TOOTH_H + NUM_SP} />
+              <ArchLine teeth={LOWER_L} />
+            </div>
 
-          {/* Rótulos quadrantes inferiores */}
-          <div style={{ display:"flex", justifyContent:"center", gap:4, marginTop:6 }}>
-            <QLabel align="right">QUADRANTE IV</QLabel>
-            <div style={{ width:10 }}/>
-            <QLabel align="left">QUADRANTE III</QLabel>
-          </div>
+            {/* Rótulos quadrantes inferiores */}
+            <div style={{ display:"flex", justifyContent:"center", gap:4, marginTop:6 }}>
+              <QLabel align="right">QUADRANTE IV</QLabel>
+              <div style={{ width:10 }}/>
+              <QLabel align="left">QUADRANTE III</QLabel>
+            </div>
+          </>) : (<>
+            {/* ── Arco decíduo ── */}
+            <div style={{ display:"flex", justifyContent:"center", gap:4, marginBottom:6 }}>
+              <QLabel align="right">QUADRANTE V</QLabel>
+              <div style={{ width:10 }}/>
+              <QLabel align="left">QUADRANTE VI</QLabel>
+            </div>
+
+            <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"center", gap:2 }}>
+              <ArchLine teeth={UPPER_R_DEC} alignEnd />
+              <MidSep h={TOOTH_H + NUM_SP} />
+              <ArchLine teeth={UPPER_L_DEC} alignEnd />
+            </div>
+
+            <div style={{ height:2, margin:"5px 16px", background:"linear-gradient(90deg,transparent,#f9a8d4 20%,#ec4899 50%,#f9a8d4 80%,transparent)", borderRadius:1 }}/>
+
+            <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"center", gap:2 }}>
+              <ArchLine teeth={[...LOWER_R_DEC].reverse()} />
+              <MidSep h={TOOTH_H + NUM_SP} />
+              <ArchLine teeth={LOWER_L_DEC} />
+            </div>
+
+            <div style={{ display:"flex", justifyContent:"center", gap:4, marginTop:6 }}>
+              <QLabel align="right">QUADRANTE VIII</QLabel>
+              <div style={{ width:10 }}/>
+              <QLabel align="left">QUADRANTE VII</QLabel>
+            </div>
+          </>)}
         </div>
 
         {/* ── Painel do dente selecionado ── */}

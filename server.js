@@ -16,30 +16,51 @@ app.post("/api/interpret-voice", async (req, res) => {
 
   const { transcript, patientContext } = req.body;
 
-  const systemPrompt = `Você é um assistente clínico para um consultório odontológico brasileiro.
-Recebe a transcrição de um registro por voz feito pela dentista após um atendimento.
-Sua função é extrair e estruturar as informações em JSON válido.
+  const systemPrompt = `Você é um assistente clínico experiente de um consultório odontológico brasileiro.
+Recebe a transcrição de um registro por voz feito pela dentista logo após o atendimento.
+O texto pode ser informal, com pausas, repetições e palavras soltas — ignore ruídos e extraia o que importa.
 
 Contexto do paciente:
 - Nome: ${patientContext.name}
 - Alergias registradas: ${patientContext.allergies?.length > 0 ? patientContext.allergies.join(", ") : "nenhuma"}
 - Tratamento atual: ${patientContext.treatment}
-- Notas inteligentes existentes: ${patientContext.notes?.map(n => n.text).join(" | ") || "nenhuma"}
+- Notas anteriores: ${patientContext.notes?.map(n => n.text).join(" | ") || "nenhuma"}
 
-Extraia do texto e responda APENAS com JSON válido, sem markdown, sem explicação:
+REGRAS DE EXTRAÇÃO — leia com atenção:
+
+1. "procedimento.descricao": SOMENTE o que foi REALIZADO nesta consulta. Reescreva em linguagem clínica profissional. NÃO copie o texto bruto da dentista.
+   Exemplo ruim: "fiz uma coisa no dente dela e tal"
+   Exemplo bom: "Restauração classe II em resina composta no dente 36"
+
+2. "retorno": APENAS se a dentista mencionar prazo, data ou intervalo para o próximo retorno.
+   - prazo_texto: exatamente como ela disse ("6 semanas", "1 mês", "quando dói")
+   - semanas: converter para número de semanas (null se não mencionado)
+   - observacao: condição mencionada, ex: "se sentir dor"
+
+3. "orientacao_paciente": instruções ou cuidados que o paciente deve seguir. Reescreva em linguagem simples e acolhedora, como se fosse uma mensagem de WhatsApp da dentista.
+
+4. "novas_preferencias": array de strings com preferências pessoais do paciente mencionadas (ex: "prefere anestesia dupla", "tem medo de barulho"). Array vazio se nada mencionado.
+
+5. "alertas_ia": array de alertas importantes:
+   - Se mencionar alergia, reação ou intolerância: inclua "⚠️ Alergia mencionada: [substância]"
+   - Se houver risco clínico: inclua o alerta
+   - Se a dentista pedir para lembrar algo: inclua
+   - Array vazio se nada relevante
+
+Responda APENAS com JSON válido, sem markdown, sem explicação, sem texto extra:
 
 {
   "procedimento": {
-    "descricao": "descrição profissional e clara do que foi feito",
+    "descricao": "descrição clínica profissional do que foi realizado",
     "prof": "${patientContext.professional}"
   },
   "retorno": {
-    "prazo_texto": "como a dentista disse (ex: 6 semanas, 1 mês)",
+    "prazo_texto": null,
     "semanas": null,
     "observacao": null
   },
   "orientacao_paciente": {
-    "texto": "orientações em linguagem acessível para enviar ao paciente",
+    "texto": "mensagem acolhedora com orientações para o paciente",
     "alerta_alergia": false,
     "alergia_mencionada": null
   },
