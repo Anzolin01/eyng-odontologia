@@ -71,7 +71,7 @@ Responda APENAS com JSON válido, sem markdown, sem explicação, sem texto extr
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-3-5-haiku-20241022",
+        model: "claude-3-haiku-20240307",
         max_tokens: 1000,
         system: systemPrompt,
         messages: [{ role: "user", content: transcript }],
