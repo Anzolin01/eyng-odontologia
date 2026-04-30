@@ -291,6 +291,18 @@ function VoiceModule({ patient, onSave, onClose }) {
 
   const processTranscript = async (text) => {
     setStage("processing");
+    const fallback = (apiErr) => {
+      console.warn("VoiceModule API error:", apiErr?.message || apiErr);
+      setErrorMsg(apiErr ? `IA indisponível (${apiErr.message}) — edite os campos abaixo manualmente.` : null);
+      setEditedResult({
+        procedimento: { descricao: text, prof: patient.professional },
+        retorno: { prazo_texto: null, semanas: null, data_calculada: null, observacao: null },
+        orientacao_paciente: { texto: null, alerta_alergia: false, alergia_mencionada: null },
+        novas_preferencias: [], alertas_ia: [],
+        _fallback: true,
+      });
+      setStage("review");
+    };
     try {
       const response = await fetch("/api/interpret-voice", {
         method: "POST",
@@ -302,16 +314,14 @@ function VoiceModule({ patient, onSave, onClose }) {
       });
       if (!response.ok) {
         const errBody = await response.text().catch(() => "");
-        throw new Error(`HTTP ${response.status}: ${errBody || "Erro na função"}`);
+        return fallback(new Error(`HTTP ${response.status}${errBody ? ": " + errBody.slice(0, 120) : ""}`));
       }
       const parsed = await response.json();
-      if (parsed.error) throw new Error(parsed.error);
+      if (parsed.error) return fallback(new Error(parsed.error));
       if (parsed.retorno?.semanas) parsed.retorno.data_calculada = addWeeks(parsed.retorno.semanas);
       setResult(parsed); setEditedResult(JSON.parse(JSON.stringify(parsed))); setStage("review");
     } catch (err) {
-      console.error("VoiceModule API error:", err);
-      setErrorMsg(`Não foi possível chamar a IA: ${err.message}. Você pode digitar o registro manualmente.`);
-      setStage("error");
+      fallback(err);
     }
   };
 
@@ -428,31 +438,68 @@ function VoiceModule({ patient, onSave, onClose }) {
 
   if (stage === "review" && editedResult) {
     const r = editedResult;
+    const isFallback = !!r._fallback;
     return (
       <div>
-        <div style={{ background: G.g100, borderRadius: 8, padding: "8px 12px", fontSize: 11, color: G.g500, lineHeight: 1.5, marginBottom: 16 }}>
+        {/* Banner: transcrição original */}
+        <div style={{ background: G.g100, borderRadius: 8, padding: "8px 12px", fontSize: 11, color: G.g500, lineHeight: 1.5, marginBottom: isFallback ? 8 : 16 }}>
           <span style={{ fontWeight: 600, color: G.g700 }}>Você disse: </span>{transcript}
         </div>
-        {r.procedimento?.descricao && (
-          <ReviewCard color={G.goldD} icon="📋" title="Procedimento" delay={0}>
-            <textarea value={r.procedimento.descricao} onChange={e => updateField("procedimento.descricao", e.target.value)} style={{ ...inputSt, height: 70, resize: "vertical", fontSize: 13 }} />
-            <div style={{ marginTop: 6, fontSize: 11, color: G.g500 }}>Prof: {r.procedimento.prof} · {fmtDate(todayISO())}</div>
-          </ReviewCard>
+
+        {/* Banner de aviso quando IA falhou */}
+        {isFallback && errorMsg && (
+          <div style={{ background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 8, padding: "8px 12px", fontSize: 11, color: "#92400E", marginBottom: 14, lineHeight: 1.5 }}>
+            ⚠️ {errorMsg}
+          </div>
         )}
-        {r.retorno?.prazo_texto && (
-          <ReviewCard color={G.blue} icon="🗓" title="Próximo Retorno" delay={0.06}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 13, color: G.g700 }}><span style={{ fontWeight: 600, color: G.blue }}>{r.retorno.prazo_texto}</span>{r.retorno.data_calculada && <span style={{ color: G.g500 }}> → {fmtDate(r.retorno.data_calculada)}</span>}</span>
-              <input type="date" value={r.retorno.data_calculada || ""} onChange={e => updateField("retorno.data_calculada", e.target.value)} style={{ ...inputSt, width: "auto", fontSize: 12, padding: "5px 10px" }} />
-            </div>
-          </ReviewCard>
-        )}
-        {r.orientacao_paciente?.texto && (
-          <ReviewCard color={G.green} icon="💬" title="Orientação ao Paciente" delay={0.12}>
-            <textarea value={r.orientacao_paciente.texto} onChange={e => updateField("orientacao_paciente.texto", e.target.value)} style={{ ...inputSt, height: 70, resize: "vertical", fontSize: 13 }} />
+
+        {/* 📋 PROCEDIMENTO — sempre visível */}
+        <ReviewCard color={G.goldD} icon="📋" title="Procedimento" delay={0}>
+          <textarea
+            value={r.procedimento?.descricao || ""}
+            onChange={e => updateField("procedimento.descricao", e.target.value)}
+            placeholder={isFallback ? "Descreva o que foi realizado..." : ""}
+            style={{ ...inputSt, height: 70, resize: "vertical", fontSize: 13 }}
+          />
+          <div style={{ marginTop: 6, fontSize: 11, color: G.g500 }}>Prof: {r.procedimento?.prof || patient.professional} · {fmtDate(todayISO())}</div>
+        </ReviewCard>
+
+        {/* 🗓 RETORNO — sempre visível (com placeholder se vazio) */}
+        <ReviewCard color={G.blue} icon="🗓" title="Próximo Retorno" delay={0.06}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            {r.retorno?.prazo_texto && (
+              <span style={{ fontSize: 13 }}>
+                <span style={{ fontWeight: 600, color: G.blue }}>{r.retorno.prazo_texto}</span>
+                {r.retorno.data_calculada && <span style={{ color: G.g500 }}> → {fmtDate(r.retorno.data_calculada)}</span>}
+              </span>
+            )}
+            <input
+              type="date"
+              value={r.retorno?.data_calculada || ""}
+              onChange={e => updateField("retorno.data_calculada", e.target.value)}
+              style={{ ...inputSt, width: "auto", fontSize: 12, padding: "5px 10px" }}
+              placeholder="Selecionar data"
+            />
+          </div>
+          {!r.retorno?.prazo_texto && (
+            <div style={{ marginTop: 6, fontSize: 11, color: G.g400 }}>Selecione a data do próximo retorno (opcional)</div>
+          )}
+        </ReviewCard>
+
+        {/* 💬 ORIENTAÇÃO — sempre visível */}
+        <ReviewCard color={G.green} icon="💬" title="Orientação ao Paciente" delay={0.12}>
+          <textarea
+            value={r.orientacao_paciente?.texto || ""}
+            onChange={e => updateField("orientacao_paciente.texto", e.target.value)}
+            placeholder="Orientações para o paciente (serão copiadas para WhatsApp)..."
+            style={{ ...inputSt, height: 60, resize: "vertical", fontSize: 13 }}
+          />
+          {r.orientacao_paciente?.texto && (
             <button onClick={() => navigator.clipboard?.writeText(r.orientacao_paciente.texto)} style={{ marginTop: 6, background: "none", border: `1px solid ${G.g200}`, borderRadius: 6, padding: "4px 10px", fontSize: 11, color: G.g500, cursor: "pointer" }}>📋 Copiar</button>
-          </ReviewCard>
-        )}
+          )}
+        </ReviewCard>
+
+        {/* 💡 PREFERÊNCIAS — só se a IA detectou */}
         {r.novas_preferencias?.length > 0 && (
           <ReviewCard color={G.goldD} icon="💡" title="Preferências Detectadas" delay={0.18}>
             {r.novas_preferencias.map((pref, i) => (
@@ -462,6 +509,8 @@ function VoiceModule({ patient, onSave, onClose }) {
             ))}
           </ReviewCard>
         )}
+
+        {/* ⚠️ ALERTAS — só se a IA detectou */}
         {r.alertas_ia?.length > 0 && (
           <ReviewCard color={G.red} icon="⚠️" title="Alertas" delay={0.24}>
             {r.alertas_ia.map((alerta, i) => (
@@ -471,9 +520,10 @@ function VoiceModule({ patient, onSave, onClose }) {
             ))}
           </ReviewCard>
         )}
+
         <div style={{ position: "sticky", bottom: 0, background: G.white, borderTop: `1px solid ${G.g200}`, padding: "12px 0 4px", marginTop: 8 }}>
           <div style={{ display: "flex", gap: 10 }}>
-            <button style={{ ...btnSec, flex: "0 0 auto" }} onClick={() => setStage("idle")}>← Regravar</button>
+            <button style={{ ...btnSec, flex: "0 0 auto" }} onClick={() => { setStage("idle"); setErrorMsg(""); }}>← Regravar</button>
             <button style={{ ...btnPrim, flex: 1, opacity: saving ? 0.7 : 1 }} onClick={saveAll} disabled={saving}>{saving ? "Salvando..." : "✓ Salvar tudo na ficha"}</button>
           </div>
         </div>
