@@ -300,13 +300,18 @@ function VoiceModule({ patient, onSave, onClose }) {
           patientContext: { name: patient.name, allergies: patient.allergies, treatment: patient.treatment, notes: patient.notes, professional: patient.professional },
         }),
       });
-      if (!response.ok) throw new Error("Function error");
+      if (!response.ok) {
+        const errBody = await response.text().catch(() => "");
+        throw new Error(`HTTP ${response.status}: ${errBody || "Erro na função"}`);
+      }
       const parsed = await response.json();
+      if (parsed.error) throw new Error(parsed.error);
       if (parsed.retorno?.semanas) parsed.retorno.data_calculada = addWeeks(parsed.retorno.semanas);
       setResult(parsed); setEditedResult(JSON.parse(JSON.stringify(parsed))); setStage("review");
-    } catch {
-      setEditedResult({ procedimento: { descricao: text, prof: patient.professional }, retorno: { prazo_texto: null, semanas: null, data_calculada: null, observacao: null }, orientacao_paciente: { texto: null, alerta_alergia: false }, novas_preferencias: [], alertas_ia: [] });
-      setStage("review");
+    } catch (err) {
+      console.error("VoiceModule API error:", err);
+      setErrorMsg(`Não foi possível chamar a IA: ${err.message}. Você pode digitar o registro manualmente.`);
+      setStage("error");
     }
   };
 
@@ -320,7 +325,7 @@ function VoiceModule({ patient, onSave, onClose }) {
     const updates = {};
     if (editedResult.procedimento?.descricao) { updates.procedures = [{ id: uid(), date: todayISO(), desc: editedResult.procedimento.descricao, prof: editedResult.procedimento.prof || patient.professional }, ...patient.procedures]; updates.lastVisit = todayISO(); }
     if (editedResult.retorno?.data_calculada) { const days = getDays(editedResult.retorno.data_calculada); updates.nextReturn = editedResult.retorno.data_calculada; updates.returnStatus = days < 0 ? "overdue" : days === 0 ? "due_today" : "ok"; }
-    if (editedResult.novas_preferencias?.length > 0) { updates.notes = [...patient.notes, ...editedResult.novas_preferencias.map(p => ({ id: uid(), type: p.tipo || "preference", text: p.texto }))]; }
+    if (editedResult.novas_preferencias?.length > 0) { updates.notes = [...(patient.notes || []), ...editedResult.novas_preferencias.map(p => ({ id: uid(), type: "preference", text: typeof p === "string" ? p : (p.texto || JSON.stringify(p)) }))]; }
     setTimeout(() => { onSave({ ...patient, ...updates }); setStage("success"); setSaving(false); setTimeout(() => onClose(), 2000); }, 600);
   };
 
@@ -448,11 +453,24 @@ function VoiceModule({ patient, onSave, onClose }) {
             <button onClick={() => navigator.clipboard?.writeText(r.orientacao_paciente.texto)} style={{ marginTop: 6, background: "none", border: `1px solid ${G.g200}`, borderRadius: 6, padding: "4px 10px", fontSize: 11, color: G.g500, cursor: "pointer" }}>📋 Copiar</button>
           </ReviewCard>
         )}
-        {r.novas_preferencias?.length > 0 && r.novas_preferencias.map((pref, i) => (
-          <ReviewCard key={i} color={G.goldD} icon="💡" title="Nova Preferência Detectada" delay={0.18 + i * 0.06}>
-            <div style={{ flex: 1, background: `${G.gold}08`, borderLeft: `3px solid ${G.gold}44`, borderRadius: 6, padding: "8px 12px", fontSize: 13, color: G.g700 }}>{pref.texto}</div>
+        {r.novas_preferencias?.length > 0 && (
+          <ReviewCard color={G.goldD} icon="💡" title="Preferências Detectadas" delay={0.18}>
+            {r.novas_preferencias.map((pref, i) => (
+              <div key={i} style={{ background: `${G.gold}08`, borderLeft: `3px solid ${G.gold}44`, borderRadius: 6, padding: "8px 12px", fontSize: 13, color: G.g700, marginBottom: i < r.novas_preferencias.length - 1 ? 6 : 0 }}>
+                {typeof pref === "string" ? pref : (pref.texto || JSON.stringify(pref))}
+              </div>
+            ))}
           </ReviewCard>
-        ))}
+        )}
+        {r.alertas_ia?.length > 0 && (
+          <ReviewCard color={G.red} icon="⚠️" title="Alertas" delay={0.24}>
+            {r.alertas_ia.map((alerta, i) => (
+              <div key={i} style={{ background: "#FEF2F2", borderLeft: `3px solid ${G.red}`, borderRadius: 6, padding: "8px 12px", fontSize: 13, color: "#991B1B", marginBottom: i < r.alertas_ia.length - 1 ? 6 : 0 }}>
+                {alerta}
+              </div>
+            ))}
+          </ReviewCard>
+        )}
         <div style={{ position: "sticky", bottom: 0, background: G.white, borderTop: `1px solid ${G.g200}`, padding: "12px 0 4px", marginTop: 8 }}>
           <div style={{ display: "flex", gap: 10 }}>
             <button style={{ ...btnSec, flex: "0 0 auto" }} onClick={() => setStage("idle")}>← Regravar</button>
