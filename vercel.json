@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/api/interpret-voice", "destination": "/api/interpret-voice" },
+    { "source": "/api/test-key", "destination": "/api/test-key" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
