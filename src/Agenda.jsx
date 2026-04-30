@@ -468,6 +468,104 @@ Boa noite! 🦷 _Eyng Odontologia_`;
   );
 }
 
+// ── Modal Lista de Espera ──
+function ModalListaEspera({ onClose }) {
+  const LS_KEY = "eyng_lista_espera";
+  const loadLista = () => {
+    try { return JSON.parse(localStorage.getItem(LS_KEY) || "[]"); } catch { return []; }
+  };
+
+  const [lista, setLista]   = useState(loadLista);
+  const [form, setForm]     = useState({ nome: "", telefone: "", preferencia: "" });
+  const setF = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const salvar = (novaLista) => {
+    setLista(novaLista);
+    localStorage.setItem(LS_KEY, JSON.stringify(novaLista));
+  };
+
+  const adicionar = () => {
+    if (!form.nome.trim() || !form.telefone.trim()) return;
+    salvar([...lista, { id: uid(), ...form, criadoEm: new Date().toISOString() }]);
+    setForm({ nome: "", telefone: "", preferencia: "" });
+  };
+
+  const remover = (id) => salvar(lista.filter(e => e.id !== id));
+
+  const buildWhatsApp = (entry) => {
+    const tel = entry.telefone.replace(/\D/g, "");
+    const msg = encodeURIComponent(
+      `Oi ${entry.nome.split(" ")[0]}! 😊 Aqui é a equipe da Eyng Odontologia. Temos uma vaga disponível na agenda! Consegue vir? Me fala aqui 😊`
+    );
+    return `https://wa.me/55${tel}?text=${msg}`;
+  };
+
+  return (
+    <Modal title="🪑 Fila de Espera" onClose={onClose} width={520}>
+
+      {/* Formulário para adicionar */}
+      <div style={{ background: C.bg, borderRadius: 14, padding: 16, marginBottom: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: C.textLight, letterSpacing: 1, marginBottom: 12 }}>ADICIONAR PACIENTE À FILA</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 800, color: C.textLight, letterSpacing: 0.8, marginBottom: 5 }}>NOME</div>
+            <input style={inputSt} placeholder="Nome completo..." value={form.nome} onChange={e => setF("nome", e.target.value)} />
+          </div>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 800, color: C.textLight, letterSpacing: 0.8, marginBottom: 5 }}>TELEFONE (com DDD)</div>
+            <input style={inputSt} placeholder="Ex: 49984364313" value={form.telefone} onChange={e => setF("telefone", e.target.value)} />
+          </div>
+        </div>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: C.textLight, letterSpacing: 0.8, marginBottom: 5 }}>PREFERÊNCIA DE HORÁRIO</div>
+          <input style={inputSt} placeholder="Ex: manhã de terça, qualquer dia à tarde..." value={form.preferencia} onChange={e => setF("preferencia", e.target.value)} />
+        </div>
+        <BtnPrim label="Adicionar à fila" icon="➕" onClick={adicionar} disabled={!form.nome.trim() || !form.telefone.trim()} small />
+      </div>
+
+      {/* Lista de espera */}
+      {lista.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "24px 0", color: C.gray, fontSize: 13, fontStyle: "italic" }}>
+          Nenhum paciente na fila de espera.
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {lista.map((entry, idx) => (
+            <div key={entry.id} style={{ background: "#fff", border: `1.5px solid #fce8ee`, borderRadius: 14, padding: "12px 14px", display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: `linear-gradient(135deg,${C.primary},${C.dark})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 11, flexShrink: 0 }}>
+                {idx + 1}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: C.text }}>{entry.nome}</div>
+                <div style={{ fontSize: 11, color: C.gray, marginTop: 1 }}>📱 {entry.telefone}</div>
+                {entry.preferencia && (
+                  <div style={{ fontSize: 11, color: C.textLight, marginTop: 2 }}>🕐 {entry.preferencia}</div>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                <a href={buildWhatsApp(entry)} target="_blank" rel="noopener noreferrer"
+                  style={{ display: "flex", alignItems: "center", gap: 5, background: "#dcfce7", border: "1.5px solid #86efac", borderRadius: 10, padding: "7px 12px", textDecoration: "none", fontSize: 11, fontWeight: 800, color: "#15803d" }}>
+                  <span style={{ fontSize: 14 }}>💬</span> WhatsApp
+                </a>
+                <button onClick={() => remover(entry.id)}
+                  style={{ background: "#fef2f2", color: "#dc2626", border: "none", borderRadius: 10, padding: "7px 12px", fontSize: 11, fontWeight: 700, fontFamily: "Nunito,sans-serif", cursor: "pointer" }}>
+                  ✕
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {lista.length > 0 && (
+        <div style={{ marginTop: 12, textAlign: "center", fontSize: 11, color: C.gray }}>
+          💡 Clique em WhatsApp para avisar o paciente sobre a vaga disponível
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 // ── COMPONENTE PRINCIPAL ──
 export default function Agenda({ patients }) {
   const [date, setDate]         = useState(todayISO());
@@ -476,6 +574,15 @@ export default function Agenda({ patients }) {
   const [modalNovo, setModalNovo]         = useState(null); // { hora, profissional } | null
   const [modalDetalhe, setModalDetalhe]   = useState(null); // appt
   const [modalFechar, setModalFechar]     = useState(false);
+  const [modalEspera, setModalEspera]     = useState(false);
+
+  // Contador fila de espera (reativo ao localStorage)
+  const [qtdEspera, setQtdEspera] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("eyng_lista_espera") || "[]").length; } catch { return 0; }
+  });
+  const refreshQtdEspera = () => {
+    try { setQtdEspera(JSON.parse(localStorage.getItem("eyng_lista_espera") || "[]").length); } catch { setQtdEspera(0); }
+  };
 
   // Carrega do Supabase
   useEffect(() => {
@@ -559,6 +666,10 @@ export default function Agenda({ patients }) {
           <input type="date" value={date} onChange={e=>setDate(e.target.value)}
             style={{border:`1.5px solid #fce8ee`,borderRadius:10,padding:"8px 12px",fontSize:12,color:C.text,fontFamily:"Nunito,sans-serif",outline:"none"}}/>
           <BtnPrim label="+ Agendar" icon="📅" onClick={()=>setModalNovo({hora:"09:00",profissional:PROFS[0]})} small/>
+          <button onClick={()=>setModalEspera(true)}
+            style={{background:`linear-gradient(135deg,${C.primary},${C.dark})`,color:"#fff",border:"none",borderRadius:10,padding:"7px 14px",fontSize:11,fontWeight:800,fontFamily:"Nunito,sans-serif",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+            🪑 Fila de Espera {qtdEspera > 0 ? `(${qtdEspera})` : ""}
+          </button>
           <button onClick={()=>setModalFechar(true)}
             style={{background:"linear-gradient(135deg,#6366f1,#4338ca)",color:"#fff",border:"none",borderRadius:10,padding:"7px 14px",fontSize:11,fontWeight:800,fontFamily:"Nunito,sans-serif",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
             🌙 Fechar Dia
@@ -664,6 +775,9 @@ export default function Agenda({ patients }) {
         <ModalFecharDia
           appts={appts} date={date} onClose={()=>setModalFechar(false)}
         />
+      )}
+      {modalEspera && (
+        <ModalListaEspera onClose={()=>{ setModalEspera(false); refreshQtdEspera(); }}/>
       )}
     </div>
   );
