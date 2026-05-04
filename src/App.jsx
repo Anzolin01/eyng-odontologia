@@ -338,8 +338,9 @@ function VoiceModule({ patient, onSave, onClose }) {
     if (editedResult.novas_preferencias?.length > 0) { updates.notes = [...(patient.notes || []), ...editedResult.novas_preferencias.map(p => ({ id: uid(), type: "preference", text: typeof p === "string" ? p : (p.texto || JSON.stringify(p)) }))]; }
     if (editedResult.lancamento_financeiro) {
       const lf = editedResult.lancamento_financeiro;
-      const novoLanc = { id: uid(), date: todayISO(), desc: lf.descricao || "Consulta", value: lf.valor || 0, type: "receita", paymentMethod: lf.forma || "Pendente", status: lf.status || "Pendente" };
-      updates.financialRecords = [novoLanc, ...(patient.financialRecords || [])];
+      const fin = patient.financeiro || { parcelas: [], pagamentos: [] };
+      const novoPag = { id: uid(), data: todayISO(), descricao: lf.descricao || "Consulta", valor: parseFloat(lf.valor) || 0, forma: lf.forma || "Pendente", status: lf.status || "Pendente" };
+      updates.financeiro = { ...fin, pagamentos: [novoPag, ...fin.pagamentos] };
       updates.financialStatus = lf.status === "Pago" ? "Em dia" : "Pendente";
     }
     setTimeout(() => { onSave({ ...patient, ...updates }); setStage("success"); setSaving(false); setTimeout(() => onClose(), 2000); }, 600);
