@@ -833,7 +833,6 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
       <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "nowrap", justifyContent: "space-between" }}>
         {[
           ["prontuario",  p1, "Prontuário",  "MESTRE"  ],
-          ["historico",   p2, "Histórico",   "SONECA"  ],
           ["notas",       p3, "Notas",       "ATCHIM"  ],
           ["contatos",    p4, "Contatos",    "FELIZ"   ],
           ["odontograma", p5, "Odontograma", "DENGOSO" ],
@@ -860,20 +859,16 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
         ))}
       </div>
 
-      {/* PRONTUÁRIO */}
+      {/* PRONTUÁRIO + HISTÓRICO (unificado) */}
       {tab === "prontuario" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12, animation: "fadeIn 0.3s ease" }}>
+          {/* Plano de Tratamento */}
           <div style={{ background: "#fff", borderRadius: 16, padding: "16px 18px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
             <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 800, marginBottom: 8, letterSpacing: 1 }}>📋 PLANO DE TRATAMENTO</div>
             <div style={{ fontSize: 14, color: "#334155", lineHeight: 1.7 }}>{p.treatment || <span style={{ color: "#94a3b8", fontStyle: "italic" }}>Nenhum plano registrado.</span>}</div>
           </div>
-          {p.procedures.length > 0 && (
-            <div style={{ background: "#fff", borderRadius: 16, padding: "16px 18px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
-              <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 800, marginBottom: 8, letterSpacing: 1 }}>📅 ÚLTIMO PROCEDIMENTO</div>
-              <div style={{ fontSize: 14, color: "#334155", fontWeight: 600 }}>{fmtDate(p.procedures[0].date)}</div>
-              <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>{p.procedures[0].desc}</div>
-            </div>
-          )}
+
+          {/* Próximo Retorno + confirmação WhatsApp */}
           <div style={{ background: "#fff", borderRadius: 16, padding: "16px 18px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
             <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 800, marginBottom: 10, letterSpacing: 1 }}>🗓 PRÓXIMO RETORNO</div>
             {p.nextReturn ? (
@@ -881,30 +876,48 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
                 <span style={{ fontSize: 14, color: "#334155", fontWeight: 600 }}>{fmtDate(p.nextReturn)}</span>
                 <ReturnBadge status={p.returnStatus} nextReturn={p.nextReturn} />
                 <button onClick={() => setModal("retorno")} style={{ ...btnSec, padding: "4px 10px", fontSize: 11 }}>Alterar</button>
+                {p.phone && (
+                  <button onClick={() => {
+                    const tel = p.phone.replace(/\D/g, "");
+                    const num = tel.startsWith("55") ? tel : `55${tel}`;
+                    const nome = p.name.split(" ")[0];
+                    const msg = `Olá ${nome}! 😊 Passando para confirmar sua consulta na Eyng Odontologia no dia ${fmtDate(p.nextReturn)}. Por favor, confirme sua presença! Se precisar reagendar, é só responder esta mensagem. Até lá! 🦷`;
+                    window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, "_blank");
+                  }} style={{ background: "#25D366", color: "#fff", border: "none", borderRadius: 8, padding: "4px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
+                    📲 Confirmar via WhatsApp
+                  </button>
+                )}
               </div>
             ) : (
               <button onClick={() => setModal("retorno")} style={{ ...btnPrim, padding: "7px 14px", fontSize: 12 }}>Definir Retorno</button>
             )}
           </div>
+
+          {/* Botões de ação */}
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <button onClick={() => setModal("contato")} style={{ ...btnPrim, flex: 1 }}>📞 Registrar Contato</button>
             <button onClick={() => setModal("procedimento")} style={{ ...btnSec, flex: 1 }}>+ Procedimento</button>
           </div>
+
+          {/* Histórico de Procedimentos (antes era aba Soneca) */}
+          <div style={{ background: "#fff", borderRadius: 16, padding: "16px 18px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+            <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 800, marginBottom: 12, letterSpacing: 1 }}>📅 HISTÓRICO DE PROCEDIMENTOS</div>
+            {p.procedures.length === 0
+              ? <div style={{ textAlign: "center", padding: "18px 0", color: "#94a3b8", fontSize: 13 }}>Nenhum procedimento registrado.</div>
+              : p.procedures.map((proc) => (
+                <div key={proc.id} style={{ display: "flex", gap: 14, paddingBottom: 12, marginBottom: 12, borderBottom: "1px solid #f1f5f9" }}>
+                  <div style={{ minWidth: 78, fontSize: 12, color: sp.from, fontWeight: 700, paddingTop: 2 }}>{fmtDate(proc.date)}</div>
+                  <div>
+                    <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.5 }}>{proc.desc}</div>
+                    <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{proc.prof}</div>
+                  </div>
+                </div>
+              ))
+            }
+          </div>
         </div>
       )}
 
-      {tab === "historico" && (
-        <div style={{ animation: "fadeIn 0.3s ease" }}>
-          <button onClick={() => setModal("procedimento")} style={{ ...btnPrim, marginBottom: 14, padding: "8px 16px", fontSize: 12 }}>+ Registrar Procedimento</button>
-          {p.procedures.length === 0 && <div style={{ textAlign: "center", padding: 30, color: "#94a3b8", fontSize: 13 }}>Nenhum procedimento registrado.</div>}
-          {p.procedures.map((proc, i) => (
-            <div key={proc.id} style={{ background: "#fff", borderRadius: 12, padding: "14px 16px", marginBottom: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", display: "flex", gap: 14 }}>
-              <div style={{ minWidth: 78, fontSize: 12, color: sp.from, fontWeight: 700, paddingTop: 2 }}>{fmtDate(proc.date)}</div>
-              <div><div style={{ fontSize: 13, color: "#334155", lineHeight: 1.5 }}>{proc.desc}</div><div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{proc.prof}</div></div>
-            </div>
-          ))}
-        </div>
-      )}
 
       {tab === "notas" && (
         <div style={{ animation: "fadeIn 0.3s ease" }}>
@@ -1018,8 +1031,13 @@ function AbaArquivos({ patient, onSave }) {
   const [fila,       setFila]       = useState([]);   // uploads em andamento
   const [dragging,   setDragging]   = useState(false);
   const [preview,    setPreview]    = useState(null);
+  const [slideIdx,   setSlideIdx]   = useState(0);
+  const [slideShow,  setSlideShow]  = useState(false);
   const [erroBucket, setErroBucket] = useState(false);
   const [erroUpload, setErroUpload] = useState("");
+
+  const imgArquivos = arquivos.filter(a => a.tipo === "foto" || /\.(jpg|jpeg|png|webp|gif)/i.test(a.url || ""));
+  const slideImg    = imgArquivos[slideIdx] || null;
   const fileRef = useRef(null);
 
   useEffect(() => { setArquivos(patient.arquivos || []); }, [patient.id]);
@@ -1205,8 +1223,11 @@ function AbaArquivos({ patient, onSave }) {
                   onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
                 >
                   <div
-                    onClick={() => setPreview(a)}
-                    style={{ width:"100%", height:110, background: isImg ? "#f1f5f9" : `${t.cor}15`, display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden", cursor:"pointer" }}
+                    onClick={() => {
+                      if (isImg) { const imgs = arquivos.filter(x => x.tipo==="foto"||/\.(jpg|jpeg|png|webp|gif)/i.test(x.url||"")); setSlideIdx(imgs.findIndex(x=>x.id===a.id)); setSlideShow(true); }
+                      else setPreview(a);
+                    }}
+                    style={{ width:"100%", height:160, background: isImg ? "#f1f5f9" : `${t.cor}15`, display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden", cursor:"pointer" }}
                   >
                     {isImg
                       ? <img src={a.url} alt={a.nome} style={{ width:"100%", height:"100%", objectFit:"cover" }} onError={e => { e.target.style.display = "none"; }}/>
@@ -1240,6 +1261,41 @@ function AbaArquivos({ patient, onSave }) {
           <div style={{ fontSize:42, marginBottom:8 }}>📂</div>
           <div style={{ fontSize:13, fontWeight:600 }}>Nenhum arquivo ainda</div>
           <div style={{ fontSize:11, color:G.g300, marginTop:4 }}>Arraste uma foto ou documento acima para começar</div>
+        </div>
+      )}
+
+      {/* ── Slideshow fullscreen (fotos) ── */}
+      {slideShow && slideImg && (
+        <div style={{ position:"fixed", inset:0, background:"#000", zIndex:9999, display:"flex", flexDirection:"column" }}>
+          {/* barra topo */}
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 20px", background:"rgba(0,0,0,0.7)" }}>
+            <span style={{ color:"#fff", fontWeight:700, fontSize:14 }}>{slideImg.nome}</span>
+            <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+              <span style={{ color:"rgba(255,255,255,0.5)", fontSize:12 }}>{slideIdx+1} / {imgArquivos.length}</span>
+              <button onClick={() => setSlideShow(false)} style={{ background:"rgba(255,255,255,0.15)", border:"none", color:"#fff", borderRadius:8, padding:"6px 14px", cursor:"pointer", fontSize:14, fontWeight:700 }}>✕ Fechar</button>
+            </div>
+          </div>
+          {/* imagem principal */}
+          <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
+            <img src={slideImg.url} alt={slideImg.nome} style={{ maxWidth:"100%", maxHeight:"100%", objectFit:"contain" }} />
+            {imgArquivos.length > 1 && (
+              <>
+                <button onClick={() => setSlideIdx(i => (i-1+imgArquivos.length)%imgArquivos.length)}
+                  style={{ position:"absolute", left:16, background:"rgba(255,255,255,0.15)", border:"none", color:"#fff", borderRadius:"50%", width:48, height:48, fontSize:22, cursor:"pointer", fontWeight:700 }}>‹</button>
+                <button onClick={() => setSlideIdx(i => (i+1)%imgArquivos.length)}
+                  style={{ position:"absolute", right:16, background:"rgba(255,255,255,0.15)", border:"none", color:"#fff", borderRadius:"50%", width:48, height:48, fontSize:22, cursor:"pointer", fontWeight:700 }}>›</button>
+              </>
+            )}
+          </div>
+          {/* miniaturas */}
+          {imgArquivos.length > 1 && (
+            <div style={{ display:"flex", gap:8, padding:"12px 16px", background:"rgba(0,0,0,0.7)", overflowX:"auto" }}>
+              {imgArquivos.map((img, i) => (
+                <img key={img.id} src={img.url} alt={img.nome} onClick={() => setSlideIdx(i)}
+                  style={{ width:60, height:60, objectFit:"cover", borderRadius:8, cursor:"pointer", border: i===slideIdx ? "2px solid #c9a84c" : "2px solid transparent", opacity: i===slideIdx ? 1 : 0.6, flexShrink:0 }} />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
