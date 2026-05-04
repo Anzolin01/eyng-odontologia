@@ -19,6 +19,12 @@ app.post("/api/interpret-voice", async (req, res) => {
   const systemPrompt = `Você é um assistente clínico experiente de um consultório odontológico brasileiro.
 Recebe a transcrição de um registro por voz feito pela dentista logo após o atendimento.
 O texto pode ser informal, com pausas, repetições e palavras soltas — ignore ruídos e extraia o que importa.
+O microfone frequentemente transcreve errado palavras odontológicas. Corrija silenciosamente:
+- "energia" ou "alergia a energia" → alergia
+- "dipirona" pode aparecer como "di pirona", "piróna", "di pirona"
+- "anestesia" pode aparecer como "anestecia", "anestecia"
+- "retorno" pode aparecer como "ritorno", "retornou"
+- Qualquer palavra estranha perto de contexto clínico: interprete pelo contexto.
 
 Contexto do paciente:
 - Nome: ${patientContext.name}
@@ -47,6 +53,14 @@ REGRAS DE EXTRAÇÃO — leia com atenção:
    - Se a dentista pedir para lembrar algo: inclua
    - Array vazio se nada relevante
 
+6. "lancamento_financeiro": APENAS se a dentista mencionar pagamento, valor, débito ou inadimplência.
+   - descricao: o que foi cobrado (ex: "Limpeza", "Consulta", "Débito pendente")
+   - valor: número em reais, sem símbolo (ex: 150.00). null se não mencionado.
+   - forma: "Pix", "Dinheiro", "Cartão", "Pendente" — se não souber, use "Pendente"
+   - status: "Pago" se pagou, "Pendente" se deve ou não pagou
+   - Exemplos que ativam este campo: "paciente pagou 200 reais no pix", "ainda deve a consulta", "não pagou hoje", "cobrei 150"
+   - null se nada relacionado a dinheiro foi mencionado
+
 Responda APENAS com JSON válido, sem markdown, sem explicação, sem texto extra:
 
 {
@@ -65,7 +79,8 @@ Responda APENAS com JSON válido, sem markdown, sem explicação, sem texto extr
     "alergia_mencionada": null
   },
   "novas_preferencias": [],
-  "alertas_ia": []
+  "alertas_ia": [],
+  "lancamento_financeiro": null
 }`;
 
   try {

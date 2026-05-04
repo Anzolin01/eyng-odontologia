@@ -336,6 +336,12 @@ function VoiceModule({ patient, onSave, onClose }) {
     if (editedResult.procedimento?.descricao) { updates.procedures = [{ id: uid(), date: todayISO(), desc: editedResult.procedimento.descricao, prof: editedResult.procedimento.prof || patient.professional }, ...patient.procedures]; updates.lastVisit = todayISO(); }
     if (editedResult.retorno?.data_calculada) { const days = getDays(editedResult.retorno.data_calculada); updates.nextReturn = editedResult.retorno.data_calculada; updates.returnStatus = days < 0 ? "overdue" : days === 0 ? "due_today" : "ok"; }
     if (editedResult.novas_preferencias?.length > 0) { updates.notes = [...(patient.notes || []), ...editedResult.novas_preferencias.map(p => ({ id: uid(), type: "preference", text: typeof p === "string" ? p : (p.texto || JSON.stringify(p)) }))]; }
+    if (editedResult.lancamento_financeiro) {
+      const lf = editedResult.lancamento_financeiro;
+      const novoLanc = { id: uid(), date: todayISO(), desc: lf.descricao || "Consulta", value: lf.valor || 0, type: "receita", paymentMethod: lf.forma || "Pendente", status: lf.status || "Pendente" };
+      updates.financialRecords = [novoLanc, ...(patient.financialRecords || [])];
+      updates.financialStatus = lf.status === "Pago" ? "Em dia" : "Pendente";
+    }
     setTimeout(() => { onSave({ ...patient, ...updates }); setStage("success"); setSaving(false); setTimeout(() => onClose(), 2000); }, 600);
   };
 
@@ -529,6 +535,26 @@ function VoiceModule({ patient, onSave, onClose }) {
                 {typeof pref === "string" ? pref : (pref.texto || JSON.stringify(pref))}
               </div>
             ))}
+          </ReviewCard>
+        )}
+
+        {/* 💰 FINANCEIRO — só se a IA detectou */}
+        {r.lancamento_financeiro && (
+          <ReviewCard color={G.green} icon="💰" title="Lançamento Financeiro Detectado" delay={0.21}>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+              <div style={{ flex: 1 }}>
+                <input value={r.lancamento_financeiro.descricao || ""} onChange={e => updateField("lancamento_financeiro.descricao", e.target.value)} style={{ ...inputSt, fontSize: 12, marginBottom: 6 }} placeholder="Descrição" />
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input value={r.lancamento_financeiro.valor || ""} onChange={e => updateField("lancamento_financeiro.valor", e.target.value)} style={{ ...inputSt, fontSize: 12, width: 100 }} placeholder="R$ valor" />
+                  <select value={r.lancamento_financeiro.forma || "Pendente"} onChange={e => updateField("lancamento_financeiro.forma", e.target.value)} style={{ ...inputSt, fontSize: 12, flex: 1 }}>
+                    {["Pix","Dinheiro","Cartão","Pendente"].map(f => <option key={f}>{f}</option>)}
+                  </select>
+                  <select value={r.lancamento_financeiro.status || "Pendente"} onChange={e => updateField("lancamento_financeiro.status", e.target.value)} style={{ ...inputSt, fontSize: 12, flex: 1 }}>
+                    <option>Pago</option><option>Pendente</option>
+                  </select>
+                </div>
+              </div>
+            </div>
           </ReviewCard>
         )}
 
