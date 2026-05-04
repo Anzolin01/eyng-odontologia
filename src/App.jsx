@@ -339,7 +339,9 @@ function VoiceModule({ patient, onSave, onClose }) {
     if (editedResult.lancamento_financeiro) {
       const lf = editedResult.lancamento_financeiro;
       const fin = patient.financeiro || { parcelas: [], pagamentos: [] };
-      const novoPag = { id: uid(), data: todayISO(), descricao: lf.descricao || "Consulta", valor: parseFloat(lf.valor) || 0, forma: lf.forma || "Pendente", status: lf.status || "Pendente" };
+      const formaMap = { "Pix": "pix", "Dinheiro": "dinheiro", "Cartão": "cartao_credito", "Cartao": "cartao_credito" };
+      const formaKey = formaMap[lf.forma] || "pix";
+      const novoPag = { id: uid(), data: todayISO(), obs: lf.descricao || "Consulta", valor: parseFloat(lf.valor) || 0, forma: formaKey };
       updates.financeiro = { ...fin, pagamentos: [novoPag, ...fin.pagamentos] };
       updates.financialStatus = lf.status === "Pago" ? "Em dia" : "Pendente";
     }
