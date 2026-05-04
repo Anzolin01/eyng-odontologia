@@ -990,6 +990,7 @@ function AbaArquivos({ patient, onSave }) {
   const [dragging,   setDragging]   = useState(false);
   const [preview,    setPreview]    = useState(null);
   const [erroBucket, setErroBucket] = useState(false);
+  const [erroUpload, setErroUpload] = useState("");
   const fileRef = useRef(null);
 
   useEffect(() => { setArquivos(patient.arquivos || []); }, [patient.id]);
@@ -1007,8 +1008,11 @@ function AbaArquivos({ patient, onSave }) {
           .upload(path, file, { upsert: true });
 
         if (error) {
+          console.error("Upload error:", error);
           if (error.message?.includes("Bucket not found") || error.message?.includes("bucket")) {
             setErroBucket(true);
+          } else {
+            setErroUpload(`Erro ao enviar "${file.name}": ${error.message}`);
           }
           continue;
         }
@@ -1077,6 +1081,17 @@ function AbaArquivos({ patient, onSave }) {
             <code style={{ background:"#fee2e2", padding:"1px 6px", borderRadius:4, fontFamily:"monospace" }}>arquivos-pacientes</code>{" "}
             com acesso <strong>público</strong> e tente novamente.
           </div>
+        </div>
+      )}
+
+      {/* Aviso: erro genérico de upload */}
+      {erroUpload && (
+        <div style={{ background:"#fef2f2", border:"1px solid #fca5a5", borderRadius:12, padding:"12px 16px", marginBottom:16, display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+          <div>
+            <div style={{ fontWeight:800, color:"#dc2626", fontSize:12, marginBottom:4 }}>❌ Falha no upload</div>
+            <div style={{ fontSize:11, color:"#ef4444", lineHeight:1.6 }}>{erroUpload}</div>
+          </div>
+          <button onClick={() => setErroUpload("")} style={{ background:"none", border:"none", color:"#dc2626", cursor:"pointer", fontSize:16, lineHeight:1 }}>×</button>
         </div>
       )}
 

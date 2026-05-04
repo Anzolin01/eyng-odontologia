@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eyng Odontologia — Roteiro Primeiros Passos</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Cormorant+Garamond:ital,wght@0,600;1,600&display=swap');
+
+  :root {
+    --vinho: #8b3458;
+    --vinho-escuro: #6b2442;
+    --ouro: #c9a84c;
+    --ouro-bg: #fefce8;
+    --verde: #16a34a;
+    --verde-bg: #f0fdf4;
+    --azul: #1d4ed8;
+    --laranja: #d97706;
+    --laranja-bg: #fffbeb;
+    --cinza1: #f8f8f8;
+    --cinza2: #e2e8f0;
+    --texto: #1a1a1a;
+    --branco: #ffffff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    color: var(--texto);
+    background: #f0f0f0;
+    font-size: 14px;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    background: white;
+    margin: 0 auto 24px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ── CAPA ── */
+  .capa {
+    background: linear-gradient(160deg, var(--vinho) 0%, var(--vinho-escuro) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 297mm;
+    padding: 60px 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .capa::before {
+    content: '';
+    position: absolute;
+    right: -60px; top: -60px;
+    width: 320px; height: 320px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
+  .capa::after {
+    content: '';
+    position: absolute;
+    left: -40px; bottom: -40px;
+    width: 240px; height: 240px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+  }
+  .logo-box {
+    width: 90px; height: 90px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 24px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 28px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 52px; color: white;
+    font-style: italic; font-weight: 600;
+  }
+  .capa h1 {
+    font-size: 32px; font-weight: 900;
+    color: white; letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .capa .sub {
+    font-size: 13px; color: rgba(255,255,255,0.75);
+    letter-spacing: 2px; margin-bottom: 16px;
+  }
+  .divider-ouro {
+    width: 80px; height: 2px;
+    background: var(--ouro); margin: 0 auto 20px;
+  }
+  .capa h2 {
+    font-size: 22px; font-weight: 700;
+    color: white; margin-bottom: 8px;
+  }
+  .capa .desc {
+    font-size: 11px; color: rgba(255,255,255,0.65);
+    margin-bottom: 40px;
+  }
+  .capa-card {
+    background: rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 20px 28px;
+    color: white;
+    font-size: 12px;
+    line-height: 1.8;
+    max-width: 420px;
+    margin-bottom: 36px;
+  }
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 100%;
+    max-width: 460px;
+  }
+  .step-chip {
+    background: rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 9px 6px;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .capa-footer {
+    position: absolute; bottom: 24px;
+    font-size: 10px; color: rgba(255,255,255,0.4);
+  }
+
+  /* ── PÁGINAS INTERNAS ── */
+  .page-header {
+    background: var(--vinho);
+    padding: 10px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .page-header .left {
+    font-size: 9px; font-weight: 700;
+    color: var(--ouro); letter-spacing: 2px;
+  }
+  .page-header .right {
+    font-size: 9px; color: rgba(255,255,255,0.55);
+  }
+
+  .page-body { padding: 32px 48px 40px; }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-size: 10px; font-weight: 700;
+    color: var(--vinho); letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .section-underline {
+    width: 36px; height: 2px;
+    background: var(--ouro); margin-bottom: 14px;
+  }
+  .intro-text {
+    font-size: 11px; line-height: 1.7;
+    color: var(--texto); margin-bottom: 24px;
+  }
+
+  /* ── STEP HEADER ── */
+  .step-header {
+    background: var(--cinza1);
+    border-radius: 10px 10px 0 0;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 22px;
+    border-bottom: 2px solid var(--cinza2);
+  }
+  .step-badge {
+    width: 30px; height: 30px;
+    background: var(--vinho);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 900; font-size: 13px;
+    flex-shrink: 0;
+  }
+  .step-title {
+    font-size: 14px; font-weight: 700;
+    color: var(--vinho);
+  }
+  .step-body {
+    border: 1px solid var(--cinza2);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    padding: 16px;
+    margin-bottom: 6px;
+  }
+  .step-desc {
+    font-size: 11px; color: var(--texto);
+    line-height: 1.6; margin-bottom: 14px;
+  }
+
+  /* ── TABELA ── */
+  .data-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+  .data-table tr:nth-child(odd) td { background: white; }
+  .data-table tr:nth-child(even) td { background: var(--cinza1); }
+  .data-table td {
+    padding: 7px 12px; font-size: 10.5px;
+    border-bottom: 1px solid var(--cinza2);
+  }
+  .data-table td:first-child {
+    font-weight: 700; color: var(--ouro);
+    width: 160px;
+  }
+  .data-table thead td {
+    background: var(--vinho) !important;
+    color: white; font-weight: 700;
+    font-size: 10px; letter-spacing: 0.5px;
+  }
+
+  /* ── CALLOUTS ── */
+  .callout {
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin: 10px 0;
+    border-left: 4px solid;
+    font-size: 10.5px;
+    line-height: 1.7;
+  }
+  .callout-label {
+    font-weight: 700; font-size: 9.5px;
+    letter-spacing: 0.5px; margin-bottom: 5px;
+  }
+  .callout.verde { background: var(--verde-bg); border-color: var(--verde); }
+  .callout.verde .callout-label { color: var(--verde); }
+  .callout.ouro  { background: var(--ouro-bg);  border-color: var(--ouro); }
+  .callout.ouro  .callout-label { color: var(--ouro); }
+  .callout.laranja { background: var(--laranja-bg); border-color: var(--laranja); }
+  .callout.laranja .callout-label { color: var(--laranja); }
+
+  /* ── BLOCO FALA (dark) ── */
+  .fala-box {
+    background: #1e1e2e;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 10px 0;
+  }
+  .fala-label {
+    color: var(--ouro); font-weight: 700;
+    font-size: 9px; margin-bottom: 8px;
+  }
+  .fala-texto {
+    color: #e2e8f0; font-size: 11px; line-height: 1.7;
+    font-style: italic;
+  }
+
+  /* ── CAMPOS IA ── */
+  .campos-ia { margin: 10px 0; }
+  .campo-row {
+    display: flex; align-items: center;
+    padding: 8px 12px;
+    border-left: 3px solid;
+    margin-bottom: 4px;
+    border-radius: 0 6px 6px 0;
+  }
+  .campo-row:nth-child(odd)  { background: white; }
+  .campo-row:nth-child(even) { background: var(--cinza1); }
+  .campo-nome {
+    font-weight: 700; font-size: 10px;
+    width: 140px; flex-shrink: 0;
+  }
+  .campo-desc { font-size: 10px; color: var(--texto); }
+
+  /* ── DROP ZONE ── */
+  .drop-zone {
+    border: 2px dashed var(--cinza2);
+    border-radius: 10px;
+    background: var(--cinza1);
+    text-align: center;
+    padding: 18px;
+    margin: 10px 0;
+  }
+  .drop-zone .dz-icon { font-size: 22px; margin-bottom: 4px; }
+  .drop-zone .dz-label { font-weight: 700; color: var(--ouro); font-size: 12px; }
+  .drop-zone .dz-ext { font-size: 10px; color: #999; margin-top: 4px; }
+
+  /* ── FEEDBACK ── */
+  .feedback-header {
+    background: var(--vinho);
+    border-radius: 10px 10px 0 0;
+    padding: 14px 18px;
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+    margin-top: 22px;
+  }
+  .feedback-body {
+    border: 1px solid var(--cinza2);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    padding: 16px;
+  }
+  .feedback-intro {
+    font-size: 11px; color: #555;
+    margin-bottom: 16px; line-height: 1.6;
+  }
+  .pergunta { margin-bottom: 14px; }
+  .pergunta-label {
+    font-weight: 700; font-size: 11px;
+    color: var(--vinho); margin-bottom: 6px;
+  }
+  .linha-resposta {
+    border-bottom: 1px solid var(--cinza2);
+    height: 24px; margin-bottom: 3px;
+  }
+
+  /* ── FOOTER ── */
+  .page-footer {
+    background: var(--cinza1);
+    border-top: 1px solid var(--cinza2);
+    text-align: center;
+    padding: 8px;
+    font-size: 9px; color: #999;
+    position: absolute; bottom: 0; width: 100%;
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    body { background: white; }
+    .page { margin: 0; box-shadow: none; page-break-after: always; }
+    .page:last-child { page-break-after: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ CAPA ══════════════════ -->
+<div class="page">
+  <div class="capa">
+    <div class="logo-box">E</div>
+    <h1>Eyng Odontologia</h1>
+    <p class="sub">PLATAFORMA DE GESTÃO INTELIGENTE</p>
+    <div class="divider-ouro"></div>
+    <h2>Roteiro · Primeiros Passos</h2>
+    <p class="desc">Para dentistas e secretárias · Mai/2026</p>
+    <div class="capa-card">
+      Este guia foi feito para você explorar o Eyng em 15 minutos.<br>
+      Siga os passos, veja o resultado esperado em cada um<br>
+      e preencha o formulário de feedback no final.
+    </div>
+    <div class="steps-grid">
+      <div class="step-chip">① Login</div>
+      <div class="step-chip">② Paciente</div>
+      <div class="step-chip">③ Agenda</div>
+      <div class="step-chip">④ Voz / IA</div>
+      <div class="step-chip">⑤ Financeiro</div>
+      <div class="step-chip">⑥ Arquivos</div>
+    </div>
+    <div class="capa-footer">eyng-odontologia.vercel.app</div>
+  </div>
+</div>
+
+<!-- ══════════════════ PÁG 2 ══════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <span class="left">EYNG ODONTOLOGIA</span>
+    <span class="right">Roteiro · Primeiros Passos</span>
+  </div>
+  <div class="page-body">
+
+    <div class="section-title">Como usar este guia</div>
+    <div class="section-underline"></div>
+    <p class="intro-text">Cada passo traz o que fazer, um exemplo real para digitar ou falar, e o resultado esperado na tela. Se algo não aparecer como descrito, anote no formulário de feedback na última página.</p>
+
+    <!-- Passo 1 -->
+    <div class="step-header">
+      <div class="step-badge">1</div>
+      <div class="step-title">Login no sistema</div>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Acesse <strong>https://eyng-odontologia.vercel.app</strong> e entre com as credenciais:</p>
+      <table class="data-table">
+        <thead><tr><td>PERFIL</td><td>USUÁRIO</td><td>SENHA</td></tr></thead>
+        <tbody>
+          <tr><td>Dentista (Dra. Caroline)</td><td><strong>caroline</strong></td><td><strong>carol123</strong></td></tr>
+          <tr><td>Secretária</td><td><strong>recepcao</strong></td><td><strong>recepcao123</strong></td></tr>
+        </tbody>
+      </table>
+      <div class="callout verde">
+        <div class="callout-label">✅ RESULTADO ESPERADO</div>
+        Splash screen com logo Eyng → painel principal com as abas: <strong>Retornos · Agenda · Pacientes · Caixa do Dia</strong>
+      </div>
+    </div>
+
+    <!-- Passo 2 -->
+    <div class="step-header">
+      <div class="step-badge">2</div>
+      <div class="step-title">Cadastrar um paciente de teste</div>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Clique em <strong>"+ Novo Paciente"</strong> (canto superior direito) e preencha:</p>
+      <table class="data-table">
+        <tbody>
+          <tr><td>Nome</td><td>Maria Silva Teste</td></tr>
+          <tr><td>Telefone</td><td>(49) 99999-0001</td></tr>
+          <tr><td>Data de nascimento</td><td>15/03/1985</td></tr>
+          <tr><td>Tratamento atual</td><td>Ortodontia</td></tr>
+          <tr><td>Alergias</td><td>Dipirona</td></tr>
+          <tr><td>Profissional</td><td>Dra. Caroline</td></tr>
+        </tbody>
+      </table>
+      <div class="callout verde">
+        <div class="callout-label">✅ RESULTADO ESPERADO</div>
+        Paciente aparece na lista com ícone de especialidade e botão de contato.<br>
+        Alergia à <strong>Dipirona</strong> fica registrada e será exibida como alerta nos próximos atendimentos.
+      </div>
+    </div>
+
+  </div>
+  <div class="page-footer">Eyng Odontologia · Plataforma de Gestão Inteligente · Mai/2026</div>
+</div>
+
+<!-- ══════════════════ PÁG 3 ══════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <span class="left">EYNG ODONTOLOGIA</span>
+    <span class="right">Roteiro · Primeiros Passos</span>
+  </div>
+  <div class="page-body">
+
+    <!-- Passo 3 -->
+    <div class="step-header">
+      <div class="step-badge">3</div>
+      <div class="step-title">Marcar uma consulta na Agenda</div>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Clique na aba <strong>Agenda</strong> → escolha um dia → clique num horário vazio → preencha:</p>
+      <table class="data-table">
+        <tbody>
+          <tr><td>Paciente</td><td>Maria Silva Teste</td></tr>
+          <tr><td>Horário</td><td>10:00</td></tr>
+          <tr><td>Procedimento</td><td>Consulta de avaliação</td></tr>
+          <tr><td>Profissional</td><td>Dra. Caroline</td></tr>
+        </tbody>
+      </table>
+      <div class="callout verde">
+        <div class="callout-label">✅ RESULTADO ESPERADO</div>
+        Consulta aparece na grade com cor e nome do paciente.<br>
+        Horário <strong>12:00–13:30</strong> fica bloqueado automaticamente (almoço ☕).
+      </div>
+      <div class="callout ouro" style="margin-top:8px">
+        <div class="callout-label">💡 DICA — Fila de Espera</div>
+        Se não houver vaga, use o botão <strong>"🪑 Fila de Espera"</strong> no topo da agenda.<br>
+        Cadastre o paciente e envie convite pelo WhatsApp quando abrir horário.
+      </div>
+    </div>
+
+    <!-- Passo 4 -->
+    <div class="step-header">
+      <div class="step-badge">4</div>
+      <div class="step-title">Registro por Voz com IA &nbsp;⭐ Principal novidade</div>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Abra a ficha de Maria → aba <strong>🎤 Voz/IA</strong> → toque no microfone e diga naturalmente:</p>
+
+      <div class="fala-box">
+        <div class="fala-label">● EXEMPLO — fale isso (pode adaptar):</div>
+        <div class="fala-texto">"Fiz limpeza completa e aplicação de flúor. Paciente tem sensibilidade nos dentes posteriores. Orientar escovar 3x ao dia e usar fio dental. Retorno em 6 semanas."</div>
+      </div>
+
+      <p class="step-desc" style="margin-top:12px">Toque no quadrado vermelho para parar → aguarde 2–3 segundos → a IA vai separar:</p>
+
+      <div class="campos-ia">
+        <div class="campo-row" style="border-color: var(--vinho)">
+          <div class="campo-nome" style="color: var(--vinho)">📋 Procedimento</div>
+          <div class="campo-desc">Profilaxia dental com aplicação de flúor e controle de sensibilidade</div>
+        </div>
+        <div class="campo-row" style="border-color: var(--azul)">
+          <div class="campo-nome" style="color: var(--azul)">🗓 Próximo Retorno</div>
+          <div class="campo-desc">"6 semanas" → calcula a data automaticamente (ex: 11/06/2026)</div>
+        </div>
+        <div class="campo-row" style="border-color: var(--verde)">
+          <div class="campo-nome" style="color: var(--verde)">💬 Orientação</div>
+          <div class="campo-desc">Mensagem pronta em linguagem amigável para enviar ao paciente</div>
+        </div>
+        <div class="campo-row" style="border-color: var(--laranja)">
+          <div class="campo-nome" style="color: var(--laranja)">⚠️ Alerta</div>
+          <div class="campo-desc">Dipirona (alergia cadastrada) aparece automaticamente como alerta</div>
+        </div>
+      </div>
+
+      <div class="callout verde">
+        <div class="callout-label">📲 ENVIAR ORIENTAÇÃO PELO WHATSAPP</div>
+        No card <strong>"Orientação ao Paciente"</strong>, clique no botão verde <strong>"Enviar WhatsApp"</strong>.<br>
+        Abre o WhatsApp com o número da Maria e a mensagem já escrita — só apertar enviar!
+      </div>
+    </div>
+
+  </div>
+  <div class="page-footer">Eyng Odontologia · Plataforma de Gestão Inteligente · Mai/2026</div>
+</div>
+
+<!-- ══════════════════ PÁG 4 ══════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <span class="left">EYNG ODONTOLOGIA</span>
+    <span class="right">Roteiro · Primeiros Passos</span>
+  </div>
+  <div class="page-body">
+
+    <!-- Passo 5 -->
+    <div class="step-header">
+      <div class="step-badge">5</div>
+      <div class="step-title">Lançar valor no Financeiro</div>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Na ficha de Maria → aba <strong>💰 Financeiro</strong> → botão <strong>"+ Lançamento"</strong>:</p>
+      <table class="data-table">
+        <tbody>
+          <tr><td>Tipo</td><td>Receita</td></tr>
+          <tr><td>Descrição</td><td>Limpeza + flúor</td></tr>
+          <tr><td>Valor</td><td>R$ 180,00</td></tr>
+          <tr><td>Forma de pagamento</td><td>Pix</td></tr>
+          <tr><td>Status</td><td>Pago</td></tr>
+        </tbody>
+      </table>
+      <div class="callout verde">
+        <div class="callout-label">✅ RESULTADO ESPERADO</div>
+        Valor aparece em <strong>"Caixa do Dia"</strong> no painel.<br>
+        Card <strong>"Recebido/Mês"</strong> no dashboard atualiza com o total.
+      </div>
+    </div>
+
+    <!-- Passo 6 -->
+    <div class="step-header">
+      <div class="step-badge">6</div>
+      <div class="step-title">Enviar foto ou arquivo do paciente</div>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Na ficha de Maria → aba <strong>Arquivos</strong> → arraste uma foto ou PDF direto para a área:</p>
+      <div class="drop-zone">
+        <div class="dz-icon">📎</div>
+        <div class="dz-label">Arraste fotos ou PDFs aqui</div>
+        <div class="dz-ext">JPG · PNG · PDF · HEIC · DOC</div>
+      </div>
+      <div class="callout verde">
+        <div class="callout-label">✅ RESULTADO ESPERADO</div>
+        Arquivo aparece na lista com ícone, nome e opção de remover.<br>
+        Fotos ficam salvas na nuvem — acessíveis de qualquer dispositivo.
+      </div>
+    </div>
+
+    <!-- Feedback -->
+    <div class="feedback-header">📝 Formulário de Feedback</div>
+    <div class="feedback-body">
+      <p class="feedback-intro">Depois de testar, responda abaixo e devolva o PDF (ou tire foto e mande por WhatsApp):</p>
+
+      <div class="pergunta">
+        <div class="pergunta-label">1. O registro por voz separou os campos corretamente? &nbsp;( sim · parcialmente · não )</div>
+        <div class="linha-resposta"></div>
+      </div>
+      <div class="pergunta">
+        <div class="pergunta-label">2. O botão de WhatsApp funcionou? Abriu com a mensagem certa?</div>
+        <div class="linha-resposta"></div>
+      </div>
+      <div class="pergunta">
+        <div class="pergunta-label">3. Conseguiu fazer upload de foto ou arquivo?</div>
+        <div class="linha-resposta"></div>
+      </div>
+      <div class="pergunta">
+        <div class="pergunta-label">4. Algo travou ou ficou confuso? Descreva:</div>
+        <div class="linha-resposta"></div>
+        <div class="linha-resposta"></div>
+      </div>
+      <div class="pergunta">
+        <div class="pergunta-label">5. O que mais te animou no sistema?</div>
+        <div class="linha-resposta"></div>
+      </div>
+      <div class="pergunta">
+        <div class="pergunta-label">6. O que está faltando para usar no dia a dia?</div>
+        <div class="linha-resposta"></div>
+        <div class="linha-resposta"></div>
+      </div>
+    </div>
+
+  </div>
+  <div class="page-footer">Eyng Odontologia · Plataforma de Gestão Inteligente · Mai/2026 &nbsp;|&nbsp; eyng-odontologia.vercel.app</div>
+</div>
+
+</body>
+</html>
