@@ -825,6 +825,9 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
           <div style={{ textAlign: "left" }}>
             <div style={{ fontFamily: "'Nunito',sans-serif", fontSize: 14, fontWeight: 800, color: "#fff" }}>🎙 Registrar por Voz</div>
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)", marginTop: 1 }}>Fale o que foi feito — a IA preenche a ficha</div>
+            {!/Mobi|Android/i.test(navigator.userAgent) && (
+              <div style={{ fontSize: 10, color: "rgba(255,220,100,0.9)", marginTop: 3 }}>💡 Para melhor resultado, use o celular</div>
+            )}
           </div>
         </button>
       </div>
@@ -832,12 +835,13 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
       {/* Tabs — 7 Anões */}
       <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "nowrap", justifyContent: "space-between" }}>
         {[
-          ["prontuario",  p1, "Prontuário",  "MESTRE"  ],
-          ["notas",       p3, "Notas",       "ATCHIM"  ],
-          ["contatos",    p4, "Contatos",    "FELIZ"   ],
-          ["odontograma", p5, "Odontograma", "DENGOSO" ],
-          ["financeiro",  p6, "Financeiro",  "ZANGADO" ],
-          ["arquivos",    p7, "Arquivos",    "DUNGA"   ],
+          ["prontuario",    p1, "Prontuário",  "MESTRE"  ],
+          ["receituario",   p2, "Receituário", "SONECA"  ],
+          ["notas",         p3, "Notas",       "ATCHIM"  ],
+          ["contatos",      p4, "Contatos",    "FELIZ"   ],
+          ["odontograma",   p5, "Odontograma", "DENGOSO" ],
+          ["financeiro",    p6, "Financeiro",  "ZANGADO" ],
+          ["arquivos",      p7, "Arquivos",    "DUNGA"   ],
         ].map(([id, img, label, dwarf]) => (
           <button key={id} onClick={() => setTab(id)} style={{
             flex: "1 1 0", minWidth: 100, padding: "12px 8px 10px",
@@ -957,6 +961,8 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
         </div>
       )}
 
+      {tab === "receituario" && <AbaReceituario patient={p} />}
+
       {tab === "odontograma" && (
         <div style={{ animation: "fadeIn 0.3s ease" }}>
           <Odontograma2D
@@ -1003,6 +1009,158 @@ const TIPOS_ARQUIVO = {
 };
 
 const BUCKET     = "arquivos-pacientes";
+// ─────────────────────────────────────────────────────────
+// ABA RECEITUÁRIO (SONECA) — templates prontos para imprimir
+// ─────────────────────────────────────────────────────────
+const CLINICA = {
+  nome: "Eyng Odontologia Ltda",
+  cnpj: "37.534.793/0001-09",
+  cidade: "Chapecó",
+  profissional: "Dra. Caroline Eyng",
+};
+
+const TIPOS_DOC = [
+  { id: "receita",       label: "📋 Receituário" },
+  { id: "lgpd",          label: "📄 Termo LGPD" },
+  { id: "comparecimento",label: "🗓 Declaração Comparec." },
+  { id: "atestado",      label: "🏥 Atestado" },
+  { id: "orcamento",     label: "💰 Orçamento" },
+];
+
+function uid2() { return Math.random().toString(36).slice(2,9); }
+
+function AbaReceituario({ patient }) {
+  const [tipo, setTipo] = useState("receita");
+  const [meds, setMeds] = useState([{ id: uid2(), nome: "", posologia: "" }]);
+  const [texto, setTexto] = useState(""); // campos livres nos outros tipos
+  const hoje = new Date().toLocaleDateString("pt-BR", { day:"2-digit", month:"long", year:"numeric" });
+
+  const addMed = () => setMeds(m => [...m, { id: uid2(), nome: "", posologia: "" }]);
+  const remMed = id => setMeds(m => m.filter(x => x.id !== id));
+  const updMed = (id, field, val) => setMeds(m => m.map(x => x.id === id ? { ...x, [field]: val } : x));
+
+  const gerarHTML = () => {
+    const base = `
+      <style>
+        body{font-family:'Times New Roman',serif;max-width:700px;margin:40px auto;padding:0 20px;color:#111;}
+        h1{font-size:22px;font-weight:bold;margin:0;}
+        h2{font-size:14px;font-weight:normal;color:#444;margin:2px 0 24px;}
+        .linha{border-bottom:1px solid #999;margin:8px 0 20px;}
+        .med{margin-bottom:18px;}
+        .med-nome{font-weight:bold;font-size:15px;text-transform:uppercase;letter-spacing:.5px;}
+        .med-pos{font-size:14px;margin-top:4px;line-height:1.6;}
+        .assinatura{margin-top:60px;text-align:right;}
+        .assinatura-linha{border-bottom:1px solid #111;width:240px;display:inline-block;margin-bottom:4px;}
+        .rodape{font-size:11px;color:#666;text-align:center;margin-top:40px;}
+        p{line-height:1.8;font-size:13px;}
+      </style>
+      <h1>${CLINICA.nome}</h1>
+      <h2>${CLINICA.profissional} · CNPJ ${CLINICA.cnpj}</h2>
+      <div class="linha"></div>
+    `;
+
+    if (tipo === "receita") {
+      const medsHtml = meds.filter(m => m.nome.trim()).map(m =>
+        `<div class="med"><div class="med-nome">${m.nome}</div><div class="med-pos">${m.posologia || ""}</div></div>`
+      ).join("");
+      return base + `<p><strong>Paciente:</strong> ${patient.name}</p><br>${medsHtml}
+        <div class="assinatura"><div class="assinatura-linha"></div><br>${CLINICA.profissional}<br>${CLINICA.cidade}, ${hoje}</div>
+        <div class="rodape">${CLINICA.nome} · ${CLINICA.cidade}</div>`;
+    }
+    if (tipo === "lgpd") {
+      return base + `<h3 style="text-align:center;">TERMO DE CONSENTIMENTO PARA TRATAMENTO DE DADOS PESSOAIS<br><small>Lei Geral de Proteção de Dados Pessoais — LGPD</small></h3>
+        <p>EU <strong>${patient.name}</strong>, CPF: ______________________, aqui denominado(a) como TITULAR, venho por meio deste, AUTORIZAR que a empresa <strong>${CLINICA.nome}</strong>, inscrita no CNPJ ${CLINICA.cnpj}, disponha dos meus dados pessoais, para fins cadastrais, atendimento odontológico, solicitações de exames e arquivo em prontuário eletrônico e físico, de acordo com os artigos 7º e 11 da Lei nº 13.709/2018, por livre e espontânea vontade.</p>
+        <p>O Titular autoriza o Consultório a utilizar: nome completo, data de nascimento, filiação, RG, CPF, fotografia, endereço, telefone, WhatsApp, e-mail, comunicações escritas e verbais, exames e atestados.</p>
+        <div class="assinatura"><div class="assinatura-linha"></div><br>Assinatura do Titular<br>${CLINICA.cidade}, ${hoje}</div>`;
+    }
+    if (tipo === "comparecimento") {
+      return base + `<h3 style="text-align:center;">DECLARAÇÃO DE COMPARECIMENTO</h3>
+        <p>Declaramos que o(a) paciente <strong>${patient.name}</strong> compareceu a esta clínica odontológica para tratamento na data de <strong>${hoje}</strong>.</p>
+        <p>${texto || "Observações: ___________________________________________________"}</p>
+        <div class="assinatura"><div class="assinatura-linha"></div><br>${CLINICA.profissional}<br>${CLINICA.cidade}, ${hoje}</div>`;
+    }
+    if (tipo === "atestado") {
+      return base + `<h3 style="text-align:center;">ATESTADO ODONTOLÓGICO</h3>
+        <p>Atestamos que o(a) paciente <strong>${patient.name}</strong> esteve sob nossos cuidados odontológicos na data de <strong>${hoje}</strong>, necessitando de repouso por <strong>____</strong> dia(s).</p>
+        <p>${texto || ""}</p>
+        <div class="assinatura"><div class="assinatura-linha"></div><br>${CLINICA.profissional}<br>${CLINICA.cidade}, ${hoje}</div>`;
+    }
+    if (tipo === "orcamento") {
+      return base + `<h3 style="text-align:center;">ORÇAMENTO DE TRATAMENTO</h3>
+        <p><strong>Paciente:</strong> ${patient.name}</p><br>
+        <p style="white-space:pre-wrap;">${texto || "Descreva os procedimentos e valores aqui..."}</p>
+        <div class="assinatura"><div class="assinatura-linha"></div><br>${CLINICA.profissional}<br>${CLINICA.cidade}, ${hoje}</div>`;
+    }
+    return base;
+  };
+
+  const imprimir = () => {
+    const w = window.open("", "_blank");
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receituário — ${patient.name}</title></head><body>${gerarHTML()}</body></html>`);
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 400);
+  };
+
+  const inp = { width:"100%", border:"1px solid #e2e8f0", borderRadius:8, padding:"8px 10px", fontSize:13, fontFamily:"inherit", background:"#fff", color:"#334155", outline:"none", boxSizing:"border-box" };
+
+  return (
+    <div style={{ animation:"fadeIn 0.3s ease", display:"flex", flexDirection:"column", gap:12 }}>
+      {/* Seletor de tipo */}
+      <div style={{ background:"#fff", borderRadius:16, padding:"14px 16px", boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}>
+        <div style={{ fontSize:10, color:"#94a3b8", fontWeight:800, letterSpacing:1, marginBottom:10 }}>TIPO DE DOCUMENTO</div>
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+          {TIPOS_DOC.map(t => (
+            <button key={t.id} onClick={() => setTipo(t.id)} style={{ padding:"6px 14px", borderRadius:20, border:"none", cursor:"pointer", fontSize:12, fontWeight:700, background: tipo===t.id ? "#8b3458" : "#f1f5f9", color: tipo===t.id ? "#fff" : "#64748b", transition:"all .15s" }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Paciente (só leitura) */}
+      <div style={{ background:"#fff", borderRadius:16, padding:"14px 16px", boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}>
+        <div style={{ fontSize:10, color:"#94a3b8", fontWeight:800, letterSpacing:1, marginBottom:6 }}>PACIENTE</div>
+        <div style={{ fontSize:14, fontWeight:700, color:"#334155" }}>{patient.name}</div>
+        <div style={{ fontSize:12, color:"#94a3b8", marginTop:2 }}>{hoje}</div>
+      </div>
+
+      {/* Medicamentos — só no receituário */}
+      {tipo === "receita" && (
+        <div style={{ background:"#fff", borderRadius:16, padding:"14px 16px", boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}>
+          <div style={{ fontSize:10, color:"#94a3b8", fontWeight:800, letterSpacing:1, marginBottom:10 }}>MEDICAMENTOS</div>
+          {meds.map((m, i) => (
+            <div key={m.id} style={{ marginBottom:12, padding:"10px 12px", background:"#f8f7f5", borderRadius:10, position:"relative" }}>
+              <div style={{ fontSize:10, color:"#8b3458", fontWeight:800, marginBottom:5 }}>#{i+1}</div>
+              <input value={m.nome} onChange={e => updMed(m.id,"nome",e.target.value)} placeholder="Nome do medicamento e dosagem (ex: Amoxicilina 875mg)" style={{ ...inp, marginBottom:6 }} />
+              <textarea value={m.posologia} onChange={e => updMed(m.id,"posologia",e.target.value)} placeholder="Posologia (ex: Tomar 1 comprimido a cada 8h por 7 dias)" rows={2} style={{ ...inp, resize:"vertical" }} />
+              {meds.length > 1 && (
+                <button onClick={() => remMed(m.id)} style={{ position:"absolute", top:8, right:10, background:"none", border:"none", color:"#f87171", fontSize:16, cursor:"pointer", lineHeight:1 }}>×</button>
+              )}
+            </div>
+          ))}
+          <button onClick={addMed} style={{ background:"none", border:"1.5px dashed #c45f82", color:"#8b3458", borderRadius:8, padding:"6px 14px", fontSize:12, fontWeight:700, cursor:"pointer", width:"100%", marginTop:2 }}>+ Adicionar medicamento</button>
+        </div>
+      )}
+
+      {/* Campo livre — outros tipos */}
+      {tipo !== "receita" && (
+        <div style={{ background:"#fff", borderRadius:16, padding:"14px 16px", boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}>
+          <div style={{ fontSize:10, color:"#94a3b8", fontWeight:800, letterSpacing:1, marginBottom:8 }}>OBSERVAÇÕES / COMPLEMENTO</div>
+          <textarea value={texto} onChange={e => setTexto(e.target.value)} placeholder={tipo==="orcamento" ? "Liste os procedimentos e valores..." : tipo==="comparecimento" ? "Observações adicionais (opcional)..." : "Observações adicionais (opcional)..."} rows={4} style={{ ...inp, resize:"vertical" }} />
+        </div>
+      )}
+
+      {/* Botão imprimir */}
+      <button onClick={imprimir} style={{ background:"linear-gradient(135deg,#c45f82,#8b3458)", color:"#fff", border:"none", borderRadius:14, padding:"14px 20px", fontSize:14, fontWeight:800, cursor:"pointer", boxShadow:"0 6px 20px rgba(196,95,130,0.4)", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+        🖨️ Gerar e Imprimir
+      </button>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
 const EXTS_FOTO  = ["jpg","jpeg","png","webp","gif","heic","bmp","tiff"];
 const EXTS_EXAME = ["pdf","doc","docx","xls","xlsx","dcm"];
 
