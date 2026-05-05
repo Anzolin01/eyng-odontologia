@@ -1277,6 +1277,17 @@ function AbaArquivos({ patient, onSave }) {
         </div>
       </div>
 
+      {/* Atalho Cefaz */}
+      <div style={{ background:"linear-gradient(135deg,#1e3a5f,#2563eb)", borderRadius:14, padding:"12px 16px", marginBottom:14, display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
+        <div>
+          <div style={{ color:"#fff", fontWeight:800, fontSize:13 }}>🦷 Imagens 3D — Cefaz</div>
+          <div style={{ color:"rgba(255,255,255,0.7)", fontSize:11, marginTop:2 }}>Panorâmicas e CBCT do paciente</div>
+        </div>
+        <button onClick={() => window.open("https://max.cfaz.net", "_blank")} style={{ background:"rgba(255,255,255,0.15)", border:"1.5px solid rgba(255,255,255,0.35)", color:"#fff", borderRadius:10, padding:"7px 14px", fontSize:12, fontWeight:800, cursor:"pointer", whiteSpace:"nowrap" }}>
+          Abrir Cefaz ↗
+        </button>
+      </div>
+
       {/* Aviso: bucket não encontrado */}
       {erroBucket && (
         <div style={{ background:"#fef2f2", border:"1px solid #fca5a5", borderRadius:12, padding:"12px 16px", marginBottom:16 }}>
