@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eyng Odontologia — Guia de Uso</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Cormorant+Garamond:ital,wght@1,600&display=swap');
+
+  :root {
+    --vinho: #8b3458;
+    --vinho2: #6b2442;
+    --ouro: #c9a84c;
+    --verde: #16a34a;
+    --verde2: #25D366;
+    --texto: #1a1a1a;
+    --cinza: #64748b;
+    --fundo: #f8f7f5;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Nunito', 'Segoe UI', sans-serif;
+    background: var(--fundo);
+    color: var(--texto);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  /* ── FOLHA A4 ── */
+  .folha {
+    width: 210mm;
+    min-height: 297mm;
+    background: #fff;
+    margin: 0 auto 20px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.13);
+    page-break-after: always;
+    position: relative;
+    overflow: hidden;
+  }
+
+  @media print {
+    body { background: #fff; }
+    .folha { box-shadow: none; margin: 0; page-break-after: always; }
+    .no-print { display: none !important; }
+  }
+
+  /* ══════════════════════════════
+     FOLHA 1 — CAPA
+  ══════════════════════════════ */
+  .capa {
+    background: linear-gradient(155deg, var(--vinho) 0%, var(--vinho2) 100%);
+    height: 297mm;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    text-align: center;
+  }
+
+  .capa-logo {
+    font-family: 'Cormorant Garamond', 'Georgia', serif;
+    font-size: 42px;
+    font-style: italic;
+    color: #fff;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .capa-sub {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ouro);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 48px;
+  }
+
+  .capa-titulo {
+    font-size: 28px;
+    font-weight: 900;
+    color: #fff;
+    margin-bottom: 12px;
+    line-height: 1.3;
+  }
+
+  .capa-desc {
+    font-size: 14px;
+    color: rgba(255,255,255,0.75);
+    max-width: 340px;
+    margin-bottom: 52px;
+    line-height: 1.7;
+  }
+
+  .capa-modulos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    max-width: 380px;
+    margin-bottom: 52px;
+  }
+
+  .capa-mod {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 20px;
+    padding: 6px 16px;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .capa-rodape {
+    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+  }
+
+  /* ══════════════════════════════
+     FOLHAS INTERNAS
+  ══════════════════════════════ */
+  .pagina {
+    padding: 18mm 16mm 14mm;
+  }
+
+  /* Cabeçalho interno */
+  .cab {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--vinho);
+    margin-bottom: 18px;
+  }
+
+  .cab-marca {
+    font-family: 'Cormorant Garamond', 'Georgia', serif;
+    font-style: italic;
+    font-size: 17px;
+    color: var(--vinho);
+    font-weight: 600;
+  }
+
+  .cab-titulo {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--cinza);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* Título de seção */
+  .secao {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 18px 0 10px;
+  }
+
+  .secao-num {
+    width: 26px;
+    height: 26px;
+    background: var(--vinho);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .secao-titulo {
+    font-size: 15px;
+    font-weight: 900;
+    color: var(--vinho);
+  }
+
+  /* Card de passo */
+  .card {
+    background: #fafafa;
+    border-radius: 10px;
+    border-left: 4px solid var(--vinho);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+
+  .card-verde { border-left-color: var(--verde2); }
+  .card-ouro  { border-left-color: var(--ouro); }
+  .card-azul  { border-left-color: #2563eb; }
+
+  .card-titulo {
+    font-weight: 800;
+    font-size: 13px;
+    margin-bottom: 4px;
+    color: var(--vinho);
+  }
+
+  .card-verde .card-titulo { color: #15803d; }
+  .card-ouro  .card-titulo { color: #92400e; }
+  .card-azul  .card-titulo { color: #1d4ed8; }
+
+  .card p { font-size: 12px; color: #374151; margin-bottom: 3px; }
+  .card p:last-child { margin-bottom: 0; }
+
+  /* Tag resultado esperado */
+  .resultado {
+    display: inline-block;
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    color: #15803d;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 6px;
+    padding: 2px 8px;
+    margin-top: 5px;
+  }
+
+  /* Alerta */
+  .alerta {
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 10px 0;
+    font-size: 12px;
+    color: #92400e;
+  }
+
+  .alerta strong { color: #78350f; }
+
+  /* Frase de exemplo */
+  .exemplo {
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 12px;
+    color: #334155;
+    font-style: italic;
+    margin: 6px 0;
+    border-left: 3px solid #94a3b8;
+  }
+
+  /* Resultado IA */
+  .ia-resultado {
+    background: linear-gradient(135deg, #fef3c7, #fffbeb);
+    border: 1px solid var(--ouro);
+    border-radius: 8px;
+    padding: 10px 13px;
+    margin: 6px 0;
+    font-size: 12px;
+  }
+
+  .ia-campo { font-weight: 800; color: #92400e; font-size: 11px; letter-spacing: 0.5px; }
+  .ia-valor { color: #1a1a1a; }
+
+  /* Divisor */
+  .hr { border: none; border-top: 1px solid #e2e8f0; margin: 14px 0; }
+
+  /* Grid de 2 colunas */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Rodapé da folha */
+  .rodape {
+    position: absolute;
+    bottom: 10mm;
+    left: 16mm;
+    right: 16mm;
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #94a3b8;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 6px;
+  }
+
+  /* ══════════════════════════════
+     FOLHA 4 — FEEDBACK
+  ══════════════════════════════ */
+  .feedback-titulo {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--vinho);
+    margin-bottom: 6px;
+  }
+
+  .feedback-sub {
+    text-align: center;
+    font-size: 12px;
+    color: var(--cinza);
+    margin-bottom: 22px;
+  }
+
+  .pergunta-label {
+    font-weight: 800;
+    font-size: 12px;
+    color: var(--vinho);
+    margin-bottom: 4px;
+    margin-top: 14px;
+  }
+
+  .linha { border-bottom: 1px solid #cbd5e1; height: 24px; margin-bottom: 2px; }
+
+  .opcoes { display: flex; gap: 18px; margin: 5px 0; }
+
+  .opcao {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #374151;
+  }
+
+  .check {
+    width: 16px; height: 16px;
+    border: 2px solid #94a3b8;
+    border-radius: 4px;
+    display: inline-flex;
+    flex-shrink: 0;
+  }
+
+  .grade {
+    display: flex;
+    gap: 8px;
+    margin: 5px 0;
+  }
+
+  .grade-num {
+    width: 32px; height: 32px;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #94a3b8;
+  }
+
+  /* BOTÃO DE IMPRESSÃO */
+  .btn-imprimir {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--vinho);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 22px;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(139,52,88,0.4);
+    font-family: 'Nunito', sans-serif;
+    z-index: 999;
+  }
+
+  .btn-imprimir:hover { background: var(--vinho2); }
+</style>
+</head>
+<body>
+
+<!-- Botão de impressão (some no print) -->
+<button class="btn-imprimir no-print" onclick="window.print()">🖨️ Salvar como PDF</button>
+
+<!-- ══════════════════════════════════════════════════
+     FOLHA 1 — CAPA
+══════════════════════════════════════════════════ -->
+<div class="folha">
+  <div class="capa">
+    <div class="capa-logo">Eyng Odontologia</div>
+    <div class="capa-sub">Sistema de Gestão</div>
+
+    <div style="width:64px;height:3px;background:var(--ouro);border-radius:2px;margin-bottom:48px;"></div>
+
+    <div class="capa-titulo">Guia de Uso<br>Primeiros Passos</div>
+    <div class="capa-desc">
+      Este guia mostra, passo a passo, como usar os principais recursos do sistema.
+      Inclui exemplos reais e o resultado esperado em cada etapa.
+    </div>
+
+    <div class="capa-modulos">
+      <span class="capa-mod">🎙 Registro por Voz</span>
+      <span class="capa-mod">📅 Prontuário + Histórico</span>
+      <span class="capa-mod">📲 WhatsApp</span>
+      <span class="capa-mod">📸 Fotos do Paciente</span>
+      <span class="capa-mod">💰 Financeiro</span>
+      <span class="capa-mod">🗓 Agenda</span>
+    </div>
+
+    <div style="width:40px;height:2px;background:rgba(255,255,255,0.25);border-radius:2px;margin-bottom:48px;"></div>
+
+    <div class="capa-rodape">Uso interno · Dra. Caroline Eyng · 2026</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FOLHA 2 — VOZ + IA / PRONTUÁRIO
+══════════════════════════════════════════════════ -->
+<div class="folha">
+  <div class="pagina">
+
+    <div class="cab">
+      <div class="cab-marca">Eyng Odontologia</div>
+      <div class="cab-titulo">Registro por Voz &amp; Prontuário</div>
+    </div>
+
+    <!-- SEÇÃO 1: REGISTRO POR VOZ -->
+    <div class="secao">
+      <div class="secao-num">1</div>
+      <div class="secao-titulo">Registrar Atendimento por Voz</div>
+    </div>
+
+    <div class="card">
+      <div class="card-titulo">Como fazer</div>
+      <p>1. Abra o paciente → clique no botão <strong>"🎙 Registrar por Voz"</strong> no card rosa</p>
+      <p>2. Clique em <strong>Iniciar gravação</strong> e fale normalmente</p>
+      <p>3. Clique <strong>Parar</strong> → aguarde 3–5 segundos para a IA processar</p>
+      <p>4. Revise o resultado nas 3 fichas → clique <strong>"Salvar tudo"</strong></p>
+    </div>
+
+    <div class="alerta">
+      <strong>Dica:</strong> fale próximo ao microfone, em voz clara. A IA corrige automaticamente erros comuns de transcrição como "energia" (lê como "alergia"), "di pirona" (dipirona), "retornou" (retorno).
+    </div>
+
+    <div class="secao" style="margin-top:12px;">
+      <div class="secao-num" style="background:transparent;border:2px solid var(--vinho);color:var(--vinho);">A</div>
+      <div class="secao-titulo" style="font-size:13px;">Exemplo 1 — Procedimento simples</div>
+    </div>
+
+    <div class="exemplo">
+      "Fiz restauração no 36, resina composta classe dois, ficou ótimo. Retorno em 6 semanas para conferir a mordida. Paciente pagou 250 reais no pix."
+    </div>
+
+    <div class="ia-resultado">
+      <div class="ia-campo">PROCEDIMENTO</div>
+      <div class="ia-valor">Restauração classe II em resina composta no dente 36</div>
+      <hr style="border:none;border-top:1px solid #fcd34d;margin:6px 0;">
+      <div class="ia-campo">RETORNO</div>
+      <div class="ia-valor">6 semanas — "para conferir a mordida"</div>
+      <hr style="border:none;border-top:1px solid #fcd34d;margin:6px 0;">
+      <div class="ia-campo">FINANCEIRO</div>
+      <div class="ia-valor">R$ 250,00 · Pix · Pago</div>
+    </div>
+
+    <div class="secao" style="margin-top:12px;">
+      <div class="secao-num" style="background:transparent;border:2px solid var(--vinho);color:var(--vinho);">B</div>
+      <div class="secao-titulo" style="font-size:13px;">Exemplo 2 — Com alergia detectada</div>
+    </div>
+
+    <div class="exemplo">
+      "Paciente relatou energia à dipirona, anotar isso. Fiz limpeza completa, tartarectomia supra e subgengival. Orientei sobre escovação. Retorno em 3 meses."
+    </div>
+
+    <div class="ia-resultado">
+      <div class="ia-campo">PROCEDIMENTO</div>
+      <div class="ia-valor">Raspagem supra e subgengival (tartrectomia completa)</div>
+      <hr style="border:none;border-top:1px solid #fcd34d;margin:6px 0;">
+      <div class="ia-campo">ALERTA IA</div>
+      <div class="ia-valor" style="color:#dc2626;font-weight:700;">⚠️ Alergia mencionada: Dipirona</div>
+      <hr style="border:none;border-top:1px solid #fcd34d;margin:6px 0;">
+      <div class="ia-campo">ORIENTACAO AO PACIENTE</div>
+      <div class="ia-valor">"Oi! Lembre de escovar os dentes com movimentos suaves, 3x ao dia..."</div>
+    </div>
+
+    <div class="resultado">✓ Resultado esperado: 3 cards preenchidos pela IA + botão "Salvar tudo" ativo</div>
+
+    <hr class="hr">
+
+    <!-- SEÇÃO 2: PRONTUÁRIO UNIFICADO -->
+    <div class="secao">
+      <div class="secao-num">2</div>
+      <div class="secao-titulo">Prontuário + Histórico (aba MESTRE)</div>
+    </div>
+
+    <div class="grid2">
+      <div class="card card-ouro">
+        <div class="card-titulo">O que tem nessa aba</div>
+        <p>— Plano de tratamento</p>
+        <p>— Próximo retorno com data</p>
+        <p>— Botão de confirmação WhatsApp</p>
+        <p>— Histórico completo de procedimentos</p>
+      </div>
+      <div class="card card-azul">
+        <div class="card-titulo">Observacoes</div>
+        <p>O historico agora fica direto no Prontuario — nao precisa mais trocar de aba para ver os procedimentos anteriores.</p>
+        <p style="margin-top:5px;">A aba "Soneca" foi removida — o conteudo foi integrado aqui.</p>
+      </div>
+    </div>
+
+  </div>
+  <div class="rodape">
+    <span>Eyng Odontologia · Guia de Uso 2026</span>
+    <span>Pagina 2 de 4</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FOLHA 3 — WHATSAPP / FOTOS / FINANCEIRO
+══════════════════════════════════════════════════ -->
+<div class="folha">
+  <div class="pagina">
+
+    <div class="cab">
+      <div class="cab-marca">Eyng Odontologia</div>
+      <div class="cab-titulo">WhatsApp · Fotos · Financeiro</div>
+    </div>
+
+    <!-- SEÇÃO 3: CONFIRMAÇÃO WHATSAPP -->
+    <div class="secao">
+      <div class="secao-num" style="background:#25D366;">3</div>
+      <div class="secao-titulo">Confirmar Consulta via WhatsApp</div>
+    </div>
+
+    <div class="card card-verde">
+      <div class="card-titulo">Como enviar a confirmacao</div>
+      <p>1. Abra o paciente → aba <strong>Prontuário (MESTRE)</strong></p>
+      <p>2. No card "Proximo Retorno", clique no botao verde <strong>"📲 Confirmar via WhatsApp"</strong></p>
+      <p>3. O WhatsApp abre direto com a mensagem pronta — so clicar em Enviar</p>
+    </div>
+
+    <div class="alerta">
+      <strong>Mensagem gerada automaticamente:</strong><br>
+      "Ola [Nome]! Passando para confirmar sua consulta na Eyng Odontologia no dia [data]. Por favor, confirme sua presenca! Se precisar reagendar, e so responder esta mensagem."
+    </div>
+
+    <div class="resultado">✓ Resultado esperado: WhatsApp abre com mensagem ja preenchida, pronta para enviar</div>
+
+    <hr class="hr">
+
+    <!-- SEÇÃO 4: FOTOS -->
+    <div class="secao">
+      <div class="secao-num">4</div>
+      <div class="secao-titulo">Fotos do Paciente (aba DUNGA)</div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-titulo">Enviar fotos</div>
+        <p>1. Aba <strong>Arquivos (DUNGA)</strong></p>
+        <p>2. Clique em <strong>"Selecionar arquivos"</strong> ou arraste as fotos</p>
+        <p>3. A foto aparece na grade com miniatura grande</p>
+      </div>
+      <div class="card card-ouro">
+        <div class="card-titulo">Ver fotos em tela cheia</div>
+        <p>Clique em qualquer foto para abrir o <strong>modo apresentacao</strong></p>
+        <p>Use as setas <strong>‹ ›</strong> para navegar entre as fotos</p>
+        <p>As miniaturas ficam na parte de baixo</p>
+      </div>
+    </div>
+
+    <div class="alerta">
+      <strong>Util para mostrar ao paciente:</strong> fotos de antes/depois, radiografias, evolucao do tratamento — tudo em tela cheia, sem precisar de outro app.
+    </div>
+
+    <div class="resultado">✓ Resultado esperado: foto aparece em grade + abre em fullscreen ao clicar</div>
+
+    <hr class="hr">
+
+    <!-- SEÇÃO 5: FINANCEIRO -->
+    <div class="secao">
+      <div class="secao-num">5</div>
+      <div class="secao-titulo">Registro Financeiro (aba ZANGADO)</div>
+    </div>
+
+    <div class="card">
+      <div class="card-titulo">Via voz (automatico)</div>
+      <p>Se na gravacao voce mencionar pagamento, a IA detecta sozinha:</p>
+    </div>
+
+    <div class="exemplo">
+      "...Paciente pagou 180 reais no pix." — ou — "...Ainda deve a consulta, nao pagou hoje."
+    </div>
+
+    <div class="ia-resultado">
+      <div class="ia-campo">LANCAMENTO DETECTADO</div>
+      <div class="ia-valor">Consulta · R$ 180,00 · Pix · Pago</div>
+    </div>
+
+    <div class="card card-azul" style="margin-top:8px;">
+      <div class="card-titulo">Via aba Financeiro (manual)</div>
+      <p>Aba <strong>Financeiro (ZANGADO)</strong> → botao <strong>"+ Registrar Pagamento"</strong> → preencher valor, forma e descricao</p>
+    </div>
+
+    <div class="resultado">✓ Resultado esperado: lancamento aparece em "Historico de Pagamentos" com data e valor</div>
+
+  </div>
+  <div class="rodape">
+    <span>Eyng Odontologia · Guia de Uso 2026</span>
+    <span>Pagina 3 de 4</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FOLHA 4 — FEEDBACK
+══════════════════════════════════════════════════ -->
+<div class="folha">
+  <div class="pagina">
+
+    <div class="cab">
+      <div class="cab-marca">Eyng Odontologia</div>
+      <div class="cab-titulo">Formulario de Feedback</div>
+    </div>
+
+    <div style="text-align:center;margin:16px 0 24px;">
+      <div style="font-size:19px;font-weight:900;color:var(--vinho);">Sua opiniao e muito importante</div>
+      <div style="font-size:12px;color:var(--cinza);margin-top:4px;">Apos testar, responda as perguntas abaixo e devolva esta folha ou foto pelo WhatsApp</div>
+    </div>
+
+    <!-- Identificação -->
+    <div style="display:flex;gap:16px;margin-bottom:4px;">
+      <div style="flex:1;">
+        <div class="pergunta-label">Nome</div>
+        <div class="linha"></div>
+      </div>
+      <div style="flex:1;">
+        <div class="pergunta-label">Data do teste</div>
+        <div class="linha"></div>
+      </div>
+    </div>
+
+    <hr class="hr">
+
+    <!-- Pergunta 1 -->
+    <div class="pergunta-label">1. Voce conseguiu usar o registro por voz sem dificuldade?</div>
+    <div class="opcoes">
+      <div class="opcao"><div class="check"></div> Sim, facil</div>
+      <div class="opcao"><div class="check"></div> Mais ou menos</div>
+      <div class="opcao"><div class="check"></div> Nao consegui</div>
+    </div>
+
+    <!-- Pergunta 2 -->
+    <div class="pergunta-label">2. O resultado da IA foi correto e util?</div>
+    <div class="grade">
+      <div class="grade-num">1</div>
+      <div class="grade-num">2</div>
+      <div class="grade-num">3</div>
+      <div class="grade-num">4</div>
+      <div class="grade-num">5</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-top:2px;width:200px;">
+      <span>pessimo</span><span>otimo</span>
+    </div>
+
+    <!-- Pergunta 3 -->
+    <div class="pergunta-label">3. Tem algo que nao funcionou ou nao ficou claro? Descreva:</div>
+    <div class="linha"></div>
+    <div class="linha"></div>
+    <div class="linha"></div>
+
+    <!-- Pergunta 4 -->
+    <div class="pergunta-label">4. A confirmacao de consulta via WhatsApp funcionou?</div>
+    <div class="opcoes">
+      <div class="opcao"><div class="check"></div> Sim, abriu e a mensagem estava certa</div>
+      <div class="opcao"><div class="check"></div> Abriu mas a mensagem tinha erro</div>
+      <div class="opcao"><div class="check"></div> Nao funcionou</div>
+    </div>
+
+    <!-- Pergunta 5 -->
+    <div class="pergunta-label">5. Qual funcao voce mais gostou?</div>
+    <div class="linha"></div>
+    <div class="linha"></div>
+
+    <!-- Pergunta 6 -->
+    <div class="pergunta-label">6. O que voce gostaria que o sistema fizesse que ainda nao faz?</div>
+    <div class="linha"></div>
+    <div class="linha"></div>
+    <div class="linha"></div>
+
+    <!-- Pergunta 7 -->
+    <div class="pergunta-label">7. Nota geral para o sistema (1 a 10):</div>
+    <div class="grade">
+      <div class="grade-num">1</div>
+      <div class="grade-num">2</div>
+      <div class="grade-num">3</div>
+      <div class="grade-num">4</div>
+      <div class="grade-num">5</div>
+      <div class="grade-num">6</div>
+      <div class="grade-num">7</div>
+      <div class="grade-num">8</div>
+      <div class="grade-num">9</div>
+      <div class="grade-num">10</div>
+    </div>
+
+    <!-- Assinatura -->
+    <hr class="hr" style="margin-top:24px;">
+    <div style="display:flex;gap:28px;margin-top:10px;">
+      <div style="flex:1;">
+        <div class="linha" style="margin-bottom:4px;"></div>
+        <div style="font-size:10px;color:#94a3b8;text-align:center;">Assinatura</div>
+      </div>
+      <div style="flex:1;">
+        <div class="linha" style="margin-bottom:4px;"></div>
+        <div style="font-size:10px;color:#94a3b8;text-align:center;">Data</div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:22px;padding:12px;background:#fafafa;border-radius:10px;border:1px solid #e2e8f0;">
+      <div style="font-size:11px;color:var(--cinza);">Obrigada por testar! Seu feedback e fundamental para melhorar o sistema.</div>
+      <div style="font-size:11px;color:var(--vinho);font-weight:700;margin-top:3px;">Cleber · Territorium PD&amp;I · contato via WhatsApp</div>
+    </div>
+
+  </div>
+  <div class="rodape">
+    <span>Eyng Odontologia · Guia de Uso 2026</span>
+    <span>Pagina 4 de 4</span>
+  </div>
+</div>
+
+</body>
+</html>
