@@ -1278,15 +1278,40 @@ function AbaArquivos({ patient, onSave }) {
       </div>
 
       {/* Atalho Cefaz */}
-      <div style={{ background:"linear-gradient(135deg,#1e3a5f,#2563eb)", borderRadius:14, padding:"12px 16px", marginBottom:14, display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
-        <div>
-          <div style={{ color:"#fff", fontWeight:800, fontSize:13 }}>🦷 Imagens 3D — Cefaz</div>
-          <div style={{ color:"rgba(255,255,255,0.7)", fontSize:11, marginTop:2 }}>Panorâmicas e CBCT do paciente</div>
-        </div>
-        <button onClick={() => window.open("https://max.cfaz.net", "_blank")} style={{ background:"rgba(255,255,255,0.15)", border:"1.5px solid rgba(255,255,255,0.35)", color:"#fff", borderRadius:10, padding:"7px 14px", fontSize:12, fontWeight:800, cursor:"pointer", whiteSpace:"nowrap" }}>
-          Abrir Cefaz ↗
-        </button>
-      </div>
+      {(() => {
+        const cefazId = patient.cefaz_id || "";
+        const url = cefazId
+          ? `https://max.cfaz.net/usr/patient_data/${cefazId}`
+          : "https://max.cfaz.net/pacientes";
+        return (
+          <div style={{ background:"linear-gradient(135deg,#1e3a5f,#2563eb)", borderRadius:14, padding:"12px 16px", marginBottom:14 }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
+              <div>
+                <div style={{ color:"#fff", fontWeight:800, fontSize:13 }}>🦷 Radiografias — Odonto Radio</div>
+                <div style={{ color:"rgba(255,255,255,0.7)", fontSize:11, marginTop:2 }}>
+                  {cefazId ? `ID Cefaz: ${cefazId} · abre direto no paciente` : "Sem ID vinculado · abre lista de pacientes"}
+                </div>
+              </div>
+              <button onClick={() => window.open(url, "_blank")} style={{ background:"rgba(255,255,255,0.15)", border:"1.5px solid rgba(255,255,255,0.35)", color:"#fff", borderRadius:10, padding:"7px 14px", fontSize:12, fontWeight:800, cursor:"pointer", whiteSpace:"nowrap" }}>
+                {cefazId ? "Ver Radiografias ↗" : "Abrir Cefaz ↗"}
+              </button>
+            </div>
+            {/* Vincular ID */}
+            <div style={{ marginTop:10, display:"flex", gap:8, alignItems:"center" }}>
+              <input
+                defaultValue={cefazId}
+                placeholder="Cole o ID do paciente no Cefaz (ex: 39617229)"
+                onBlur={e => {
+                  const val = e.target.value.trim();
+                  if (val !== cefazId) onSave({ ...patient, cefaz_id: val });
+                }}
+                style={{ flex:1, background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:8, padding:"6px 10px", fontSize:12, color:"#fff", outline:"none", fontFamily:"monospace" }}
+              />
+              <span style={{ color:"rgba(255,255,255,0.5)", fontSize:10, whiteSpace:"nowrap" }}>da URL do paciente</span>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Aviso: bucket não encontrado */}
       {erroBucket && (
