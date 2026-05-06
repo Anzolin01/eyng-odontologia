@@ -1654,7 +1654,7 @@ export default function App() {
     load();
   }, []);
 
-  const ADMIN_EMAILS = ["anzolin01@gmail.com"];
+  const ADMIN_EMAILS = ["anzolin01@gmail.com", "dev@eyngodontologia.com.br"];
   const isAdmin = isDev || ADMIN_EMAILS.includes(user?.email);
 
   const updatePatient = async (u) => {
