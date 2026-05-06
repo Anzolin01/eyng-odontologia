@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "./supabase";
+import { track, startFunnel } from "./tracking";
 import Odontograma2D from "./Odontograma2D";
 import FinanceiroModule, { calcResumo } from "./FinanceiroModule";
 import CaixaDia from "./CaixaDia";
@@ -257,6 +258,8 @@ function VoiceModule({ patient, onSave, onClose }) {
   const recognitionRef = useRef(null);
   const transcriptRef = useRef("");
   const isRecordingRef = useRef(false);
+  const funnelIdRef    = useRef(null);   // funil de voz
+  const recStartRef    = useRef(0);      // pra medir duração
 
   const startRecording = useCallback(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -264,6 +267,10 @@ function VoiceModule({ patient, onSave, onClose }) {
     transcriptRef.current = "";
     setTranscript(""); setInterimText(""); setStage("recording");
     isRecordingRef.current = true;
+    // ── tracking ──
+    funnelIdRef.current = startFunnel("voice");
+    recStartRef.current = Date.now();
+    track("voice_record_start", { funnel_id: funnelIdRef.current, patient_id: patient.id });
     const startRec = () => {
       const rec = new SpeechRecognition();
       rec.lang = "pt-BR"; rec.continuous = false; rec.interimResults = true; rec.maxAlternatives = 1;
@@ -285,14 +292,18 @@ function VoiceModule({ patient, onSave, onClose }) {
     isRecordingRef.current = false;
     if (recognitionRef.current) recognitionRef.current.stop();
     const finalText = transcriptRef.current.trim();
+    const duration_ms = Date.now() - (recStartRef.current || Date.now());
+    track("voice_record_stop", { funnel_id: funnelIdRef.current, duration_ms, transcript_length: finalText.length });
     if (!finalText || finalText.length < 5) { setErrorMsg("Não captei nada. Tente novamente."); setStage("error"); return; }
     processTranscript(finalText);
   }, []);
 
   const processTranscript = async (text) => {
     setStage("processing");
+    track("voice_ai_request", { funnel_id: funnelIdRef.current, transcript_length: text.length });
     const fallback = (apiErr) => {
       console.warn("VoiceModule API error:", apiErr?.message || apiErr);
+      track("voice_ai_fail", { funnel_id: funnelIdRef.current, error: apiErr?.message?.slice(0, 200) || "unknown" });
       setErrorMsg(apiErr ? `IA indisponível (${apiErr.message}) — edite os campos abaixo manualmente.` : null);
       setEditedResult({
         procedimento: { descricao: text, prof: patient.professional },
@@ -319,6 +330,14 @@ function VoiceModule({ patient, onSave, onClose }) {
       const parsed = await response.json();
       if (parsed.error) return fallback(new Error(parsed.error));
       if (parsed.retorno?.semanas) parsed.retorno.data_calculada = addWeeks(parsed.retorno.semanas);
+      track("voice_ai_success", {
+        funnel_id: funnelIdRef.current,
+        has_procedimento: !!parsed.procedimento?.descricao,
+        has_retorno:      !!parsed.retorno?.prazo_texto,
+        has_orientacao:   !!parsed.orientacao_paciente?.texto,
+        has_lancamento:   !!parsed.lancamento_financeiro,
+        has_alerta:       (parsed.alertas_ia?.length || 0) > 0,
+      });
       setResult(parsed); setEditedResult(JSON.parse(JSON.stringify(parsed))); setStage("review");
     } catch (err) {
       fallback(err);
@@ -332,6 +351,14 @@ function VoiceModule({ patient, onSave, onClose }) {
 
   const saveAll = () => {
     if (!editedResult) return; setSaving(true);
+    track("voice_save_all", {
+      funnel_id: funnelIdRef.current,
+      patient_id: patient.id,
+      saved_procedimento: !!editedResult.procedimento?.descricao,
+      saved_retorno:      !!editedResult.retorno?.data_calculada,
+      saved_lancamento:   !!editedResult.lancamento_financeiro,
+      was_fallback:       !!editedResult._fallback,
+    });
     const updates = {};
     if (editedResult.procedimento?.descricao) { updates.procedures = [{ id: uid(), date: todayISO(), desc: editedResult.procedimento.descricao, prof: editedResult.procedimento.prof || patient.professional }, ...patient.procedures]; updates.lastVisit = todayISO(); }
     if (editedResult.retorno?.data_calculada) { const days = getDays(editedResult.retorno.data_calculada); updates.nextReturn = editedResult.retorno.data_calculada; updates.returnStatus = days < 0 ? "overdue" : days === 0 ? "due_today" : "ok"; }
@@ -778,6 +805,11 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
   const [voiceOpen, setVoiceOpen] = useState(false);
   const sp = SP[p.specialty] || SP["Ortodontia"];
 
+  // Trackeia abertura do paciente uma vez por mount
+  useEffect(() => {
+    track("patient_open", { patient_id: patient.id, patient_name: patient.name, specialty: patient.specialty });
+  }, [patient.id]);
+
   const save = u => { setP(u); onUpdate(u); };
   const rLabel = { confirmado: "Confirmou retorno", reagendou: "Reagendou", sem_resposta: "Sem resposta", nao_atendeu: "Não atendeu", recusou: "Recusou" };
   const rColor = { confirmado: G.green, reagendou: G.blue, sem_resposta: G.g500, nao_atendeu: G.orange, recusou: G.red };
@@ -818,7 +850,7 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
         </div>
 
         {/* Botão Voz */}
-        <button onClick={() => setVoiceOpen(true)} style={{ width: "100%", padding: "12px 20px", borderRadius: 14, background: "rgba(255,255,255,0.15)", border: "1.5px solid rgba(255,255,255,0.4)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, transition: "all .2s" }}
+        <button onClick={() => { track("voice_modal_open", { patient_id: p.id }); setVoiceOpen(true); }} style={{ width: "100%", padding: "12px 20px", borderRadius: 14, background: "rgba(255,255,255,0.15)", border: "1.5px solid rgba(255,255,255,0.4)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, transition: "all .2s" }}
           onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.25)"}
           onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.15)"}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round" /></svg>
@@ -843,7 +875,7 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
           ["financeiro",    p6, "Financeiro",  "ZANGADO" ],
           ["arquivos",      p7, "Arquivos",    "DUNGA"   ],
         ].map(([id, img, label, dwarf]) => (
-          <button key={id} onClick={() => setTab(id)} style={{
+          <button key={id} onClick={() => { track("tab_view", { tab: id, patient_id: p.id }); setTab(id); }} style={{
             flex: "1 1 0", minWidth: 100, padding: "12px 8px 10px",
             borderRadius: 18, border: "none", cursor: "pointer",
             background: tab === id ? "linear-gradient(135deg,#c45f82,#8b3458)" : "#fff",
@@ -882,6 +914,7 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
                 <button onClick={() => setModal("retorno")} style={{ ...btnSec, padding: "4px 10px", fontSize: 11 }}>Alterar</button>
                 {p.phone && (
                   <button onClick={() => {
+                    track("whatsapp_confirm_click", { patient_id: p.id });
                     const tel = p.phone.replace(/\D/g, "");
                     const num = tel.startsWith("55") ? tel : `55${tel}`;
                     const nome = p.name.split(" ")[0];
@@ -1095,6 +1128,7 @@ function AbaReceituario({ patient }) {
   };
 
   const imprimir = () => {
+    track("receituario_print", { patient_id: patient.id, tipo });
     const w = window.open("", "_blank");
     if (!w) return;
     w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receituário — ${patient.name}</title></head><body>${gerarHTML()}</body></html>`);
@@ -1202,6 +1236,7 @@ function AbaArquivos({ patient, onSave }) {
 
   const handleFiles = async (files) => {
     const arr = Array.from(files);
+    track("photo_upload", { patient_id: patient.id, count: arr.length });
     for (const file of arr) {
       const filaId = `${Date.now()}-${Math.random()}`;
       setFila(f => [...f, { id: filaId, nome: file.name }]);
@@ -1292,7 +1327,7 @@ function AbaArquivos({ patient, onSave }) {
                   {cefazId ? `ID Cefaz: ${cefazId} · abre direto no paciente` : "Sem ID vinculado · abre lista de pacientes"}
                 </div>
               </div>
-              <button onClick={() => window.open(url, "_blank")} style={{ background:"rgba(255,255,255,0.15)", border:"1.5px solid rgba(255,255,255,0.35)", color:"#fff", borderRadius:10, padding:"7px 14px", fontSize:12, fontWeight:800, cursor:"pointer", whiteSpace:"nowrap" }}>
+              <button onClick={() => { track("cefaz_open", { patient_id: patient.id, has_id: !!cefazId }); window.open(url, "_blank"); }} style={{ background:"rgba(255,255,255,0.15)", border:"1.5px solid rgba(255,255,255,0.35)", color:"#fff", borderRadius:10, padding:"7px 14px", fontSize:12, fontWeight:800, cursor:"pointer", whiteSpace:"nowrap" }}>
                 {cefazId ? "Ver Radiografias ↗" : "Abrir Cefaz ↗"}
               </button>
             </div>
@@ -1418,7 +1453,7 @@ function AbaArquivos({ patient, onSave }) {
                 >
                   <div
                     onClick={() => {
-                      if (isImg) { const imgs = arquivos.filter(x => x.tipo==="foto"||/\.(jpg|jpeg|png|webp|gif)/i.test(x.url||"")); setSlideIdx(imgs.findIndex(x=>x.id===a.id)); setSlideShow(true); }
+                      if (isImg) { track("photo_view_fullscreen", { patient_id: patient.id }); const imgs = arquivos.filter(x => x.tipo==="foto"||/\.(jpg|jpeg|png|webp|gif)/i.test(x.url||"")); setSlideIdx(imgs.findIndex(x=>x.id===a.id)); setSlideShow(true); }
                       else setPreview(a);
                     }}
                     style={{ width:"100%", height:160, background: isImg ? "#f1f5f9" : `${t.cor}15`, display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden", cursor:"pointer" }}
@@ -1592,8 +1627,14 @@ export default function App() {
   // Auth
   useEffect(() => {
     if (isDev) return;
-    supabase.auth.getSession().then(({ data: { session } }) => { setUser(session?.user ?? null); setAuthLoading(false); });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => setUser(session?.user ?? null));
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null); setAuthLoading(false);
+      if (session?.user) track("session_first_action", { ua: navigator.userAgent.slice(0, 120) });
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) track("session_first_action", { ua: navigator.userAgent.slice(0, 120) });
+    });
     return () => subscription.unsubscribe();
   }, []);
 
