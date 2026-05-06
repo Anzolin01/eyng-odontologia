@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "./supabase";
 import { track, startFunnel } from "./tracking";
+import IntelDashboard from "./IntelDashboard";
 import Odontograma2D from "./Odontograma2D";
 import FinanceiroModule, { calcResumo } from "./FinanceiroModule";
 import CaixaDia from "./CaixaDia";
@@ -1618,7 +1619,7 @@ export default function App() {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [splash, setSplash] = useState(true);
-  const [view, setView] = useState("painel"); // "painel" | "pacientes" | "caixa"
+  const [view, setView] = useState("painel"); // "painel" | "pacientes" | "caixa" | "intel"
   const [selected, setSelected] = useState(null);
   const [modalNovo, setModalNovo] = useState(false);
   const [user, setUser] = useState(null);
@@ -1652,6 +1653,9 @@ export default function App() {
     };
     load();
   }, []);
+
+  const ADMIN_EMAILS = ["anzolin01@gmail.com"];
+  const isAdmin = isDev || ADMIN_EMAILS.includes(user?.email);
 
   const updatePatient = async (u) => {
     setPatients(ps => ps.map(p => p.id === u.id ? u : p));
@@ -1726,25 +1730,34 @@ export default function App() {
               {id === "painel" && overdueCount > 0 && <span style={{ marginLeft: 6, background: "#EF4444", color: "#fff", borderRadius: 8, padding: "1px 6px", fontSize: 9, fontWeight: 800 }}>{overdueCount}</span>}
             </button>
           ))}
+          {isAdmin && (
+            <button onClick={() => { setView("intel"); setSelected(null); }} title="Intel — só você vê isso" style={{ background: "none", border: "none", borderBottom: view === "intel" ? "2.5px solid #0f1117" : "2.5px solid transparent", padding: "13px 10px", cursor: "pointer", fontSize: 16, marginBottom: -1, opacity: 0.35, transition: "opacity .2s" }} onMouseEnter={e => e.currentTarget.style.opacity = "1"} onMouseLeave={e => e.currentTarget.style.opacity = view === "intel" ? "1" : "0.35"}>
+              ⚡
+            </button>
+          )}
           <div style={{ flex: 1 }} />
           <button onClick={() => setModalNovo(true)} style={{ background: "linear-gradient(135deg,#c45f82,#8b3458)", color: "#fff", border: "none", borderRadius: 20, padding: "7px 16px", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "'Nunito',sans-serif", margin: "6px 0" }}>+ Novo Paciente</button>
         </div>
       )}
 
       {/* CONTENT */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "20px 24px" }}>
-        {selected ? (
-          <DetalhePaciente patient={selected} onBack={() => setSelected(null)} onUpdate={updatePatient} />
-        ) : view === "painel" ? (
-          <PainelRetornos patients={patients} onSelect={setSelected} onUpdate={updatePatient} />
-        ) : view === "agenda" ? (
-          <Agenda patients={patients} />
-        ) : view === "caixa" ? (
-          <CaixaDia patients={patients} onSavePatient={updatePatient} />
-        ) : (
-          <ListaPacientes patients={patients} onSelect={setSelected} />
-        )}
-      </div>
+      {view === "intel" && isAdmin ? (
+        <IntelDashboard />
+      ) : (
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "20px 24px" }}>
+          {selected ? (
+            <DetalhePaciente patient={selected} onBack={() => setSelected(null)} onUpdate={updatePatient} />
+          ) : view === "painel" ? (
+            <PainelRetornos patients={patients} onSelect={setSelected} onUpdate={updatePatient} />
+          ) : view === "agenda" ? (
+            <Agenda patients={patients} />
+          ) : view === "caixa" ? (
+            <CaixaDia patients={patients} onSavePatient={updatePatient} />
+          ) : (
+            <ListaPacientes patients={patients} onSelect={setSelected} />
+          )}
+        </div>
+      )}
 
       <div style={{ textAlign: "center", padding: "20px 16px", borderTop: "1px solid #f1f5f9", marginTop: 20, fontSize: 11, color: "#cbd5e1", fontWeight: 700, letterSpacing: 1, fontFamily: "'Nunito',sans-serif" }}>
         EYNG ODONTOLOGIA · PLATAFORMA DE GESTÃO INTELIGENTE
