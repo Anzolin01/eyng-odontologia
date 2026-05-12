@@ -1326,14 +1326,14 @@ function AbaArquivos({ patient, onSave }) {
         const cefazId = patient.cefaz_id || "";
         const url = cefazId
           ? `https://max.cfaz.net/usr/patient_data/${cefazId}`
-          : "https://max.cfaz.net/pacientes";
+          : "https://max.cfaz.net";
         return (
           <div style={{ background:"linear-gradient(135deg,#1e3a5f,#2563eb)", borderRadius:14, padding:"12px 16px", marginBottom:14 }}>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
               <div>
                 <div style={{ color:"#fff", fontWeight:800, fontSize:13 }}>🦷 Radiografias — Odonto Radio</div>
                 <div style={{ color:"rgba(255,255,255,0.7)", fontSize:11, marginTop:2 }}>
-                  {cefazId ? `ID Cefaz: ${cefazId} · abre direto no paciente` : "Sem ID vinculado · abre lista de pacientes"}
+                  {cefazId ? `ID Cefaz: ${cefazId} · abre direto no paciente` : "Sem ID vinculado · abre login do Cefaz"}
                 </div>
               </div>
               <button onClick={() => { track("cefaz_open", { patient_id: patient.id, has_id: !!cefazId }); window.open(url, "_blank"); }} style={{ background:"rgba(255,255,255,0.15)", border:"1.5px solid rgba(255,255,255,0.35)", color:"#fff", borderRadius:10, padding:"7px 14px", fontSize:12, fontWeight:800, cursor:"pointer", whiteSpace:"nowrap" }}>
