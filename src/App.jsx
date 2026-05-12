@@ -478,9 +478,17 @@ function VoiceModule({ patient, onSave, onClose }) {
     const isFallback = !!r._fallback;
     return (
       <div>
-        {/* Banner: transcrição original */}
-        <div style={{ background: G.g100, borderRadius: 8, padding: "8px 12px", fontSize: 11, color: G.g500, lineHeight: 1.5, marginBottom: isFallback ? 8 : 16 }}>
-          <span style={{ fontWeight: 600, color: G.g700 }}>Você disse: </span>{transcript}
+        {/* Banner: transcrição editável */}
+        <div style={{ background: G.g100, borderRadius: 8, padding: "8px 12px", marginBottom: isFallback ? 8 : 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: G.g700, textTransform: "uppercase", letterSpacing: 0.5 }}>O que você disse</span>
+            <button onClick={() => processTranscript(transcript)} style={{ background: G.blue, color: "#fff", border: "none", borderRadius: 6, padding: "3px 10px", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>↺ Re-interpretar</button>
+          </div>
+          <textarea
+            value={transcript}
+            onChange={e => setTranscript(e.target.value)}
+            style={{ ...inputSt, fontSize: 16, height: 60, resize: "vertical", background: "transparent", border: `1px solid ${G.g200}`, color: G.g700 }}
+          />
         </div>
 
         {/* Banner de aviso quando IA falhou */}
@@ -496,7 +504,7 @@ function VoiceModule({ patient, onSave, onClose }) {
             value={r.procedimento?.descricao || ""}
             onChange={e => updateField("procedimento.descricao", e.target.value)}
             placeholder={isFallback ? "Descreva o que foi realizado..." : ""}
-            style={{ ...inputSt, height: 70, resize: "vertical", fontSize: 13 }}
+            style={{ ...inputSt, height: 70, resize: "vertical", fontSize: 16 }}
           />
           <div style={{ marginTop: 6, fontSize: 11, color: G.g500 }}>Prof: {r.procedimento?.prof || patient.professional} · {fmtDate(todayISO())}</div>
         </ReviewCard>
@@ -529,7 +537,7 @@ function VoiceModule({ patient, onSave, onClose }) {
             value={r.orientacao_paciente?.texto || ""}
             onChange={e => updateField("orientacao_paciente.texto", e.target.value)}
             placeholder="Orientações para o paciente (serão copiadas para WhatsApp)..."
-            style={{ ...inputSt, height: 60, resize: "vertical", fontSize: 13 }}
+            style={{ ...inputSt, height: 80, resize: "vertical", fontSize: 16 }}
           />
           {r.orientacao_paciente?.texto && (
             <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
