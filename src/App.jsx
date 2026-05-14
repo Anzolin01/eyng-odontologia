@@ -609,10 +609,19 @@ function VoiceModule({ patient, onSave, onClose }) {
         )}
 
         <div style={{ position: "sticky", bottom: 0, background: G.white, borderTop: `1px solid ${G.g200}`, padding: "12px 0 4px", marginTop: 8 }}>
-          <div style={{ display: "flex", gap: 10 }}>
-            <button style={{ ...btnSec, flex: "0 0 auto" }} onClick={() => { setStage("idle"); setErrorMsg(""); }}>← Regravar</button>
-            <button style={{ ...btnPrim, flex: 1, opacity: saving ? 0.7 : 1 }} onClick={saveAll} disabled={saving}>{saving ? "Salvando..." : "✓ Salvar tudo na ficha"}</button>
-          </div>
+          {saving ? (
+            <div style={{ textAlign: "center", fontSize: 13, color: G.g500, padding: "8px 0" }}>Salvando...</div>
+          ) : (
+            <div style={{ display: "flex", gap: 10 }}>
+              <button style={{ ...btnSec, flex: "0 0 auto" }} onClick={() => { setStage("idle"); setErrorMsg(""); }}>← Regravar</button>
+              <button
+                style={{ ...btnPrim, flex: 1, background: "#16a34a" }}
+                onClick={() => { if (window.confirm("Salvar tudo na ficha do paciente?")) saveAll(); }}
+              >
+                ✓ Salvar tudo na ficha
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -812,6 +821,9 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
   const [tab, setTab] = useState("prontuario");
   const [modal, setModal] = useState(null);
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [editingTreatment, setEditingTreatment] = useState(false);
+  const [treatmentDraft, setTreatmentDraft] = useState("");
+  const [editingProc, setEditingProc] = useState(null); // { id, date, desc, prof }
   const sp = SP[p.specialty] || SP["Ortodontia"];
 
   // Trackeia abertura do paciente uma vez por mount
@@ -909,8 +921,21 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 12, animation: "fadeIn 0.3s ease" }}>
           {/* Plano de Tratamento */}
           <div style={{ background: "#fff", borderRadius: 16, padding: "16px 18px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
-            <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 800, marginBottom: 8, letterSpacing: 1 }}>📋 PLANO DE TRATAMENTO</div>
-            <div style={{ fontSize: 14, color: "#334155", lineHeight: 1.7 }}>{p.treatment || <span style={{ color: "#94a3b8", fontStyle: "italic" }}>Nenhum plano registrado.</span>}</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 800, letterSpacing: 1 }}>📋 PLANO DE TRATAMENTO</div>
+              {!editingTreatment && <button onClick={() => { setEditingTreatment(true); setTreatmentDraft(p.treatment || ""); }} style={{ background: "none", border: `1px solid ${G.g200}`, borderRadius: 6, padding: "3px 10px", fontSize: 11, color: G.g500, cursor: "pointer" }}>✏️ Editar</button>}
+            </div>
+            {editingTreatment ? (
+              <div>
+                <textarea value={treatmentDraft} onChange={e => setTreatmentDraft(e.target.value)} style={{ ...inputSt, height: 90, resize: "vertical", fontSize: 16, marginBottom: 8 }} autoFocus />
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => { save({ ...p, treatment: treatmentDraft }); setEditingTreatment(false); }} style={{ ...btnPrim, padding: "6px 16px", fontSize: 12 }}>Salvar</button>
+                  <button onClick={() => setEditingTreatment(false)} style={{ ...btnSec, padding: "6px 16px", fontSize: 12 }}>Cancelar</button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ fontSize: 14, color: "#334155", lineHeight: 1.7 }}>{p.treatment || <span style={{ color: "#94a3b8", fontStyle: "italic" }}>Nenhum plano registrado. Clique em Editar para adicionar.</span>}</div>
+            )}
           </div>
 
           {/* Próximo Retorno + confirmação WhatsApp */}
@@ -951,12 +976,34 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
             {p.procedures.length === 0
               ? <div style={{ textAlign: "center", padding: "18px 0", color: "#94a3b8", fontSize: 13 }}>Nenhum procedimento registrado.</div>
               : p.procedures.map((proc) => (
-                <div key={proc.id} style={{ display: "flex", gap: 14, paddingBottom: 12, marginBottom: 12, borderBottom: "1px solid #f1f5f9" }}>
-                  <div style={{ minWidth: 78, fontSize: 12, color: sp.from, fontWeight: 700, paddingTop: 2 }}>{fmtDate(proc.date)}</div>
-                  <div>
-                    <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.5 }}>{proc.desc}</div>
-                    <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{proc.prof}</div>
-                  </div>
+                <div key={proc.id} style={{ paddingBottom: 12, marginBottom: 12, borderBottom: "1px solid #f1f5f9" }}>
+                  {editingProc?.id === proc.id ? (
+                    <div>
+                      <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
+                        <input type="date" value={editingProc.date} onChange={e => setEditingProc(ep => ({ ...ep, date: e.target.value }))} style={{ ...inputSt, fontSize: 14, width: "auto" }} />
+                        <select value={editingProc.prof} onChange={e => setEditingProc(ep => ({ ...ep, prof: e.target.value }))} style={{ ...inputSt, fontSize: 14, flex: 1 }}>
+                          <option>Dra. Caroline</option><option>Dr. João Beno</option>
+                        </select>
+                      </div>
+                      <textarea value={editingProc.desc} onChange={e => setEditingProc(ep => ({ ...ep, desc: e.target.value }))} style={{ ...inputSt, height: 70, fontSize: 16, resize: "vertical", marginBottom: 6 }} />
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button onClick={() => { save({ ...p, procedures: p.procedures.map(x => x.id === proc.id ? editingProc : x) }); setEditingProc(null); }} style={{ ...btnPrim, padding: "5px 14px", fontSize: 11 }}>Salvar</button>
+                        <button onClick={() => setEditingProc(null)} style={{ ...btnSec, padding: "5px 14px", fontSize: 11 }}>Cancelar</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+                      <div style={{ minWidth: 78, fontSize: 12, color: sp.from, fontWeight: 700, paddingTop: 2 }}>{fmtDate(proc.date)}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.5 }}>{proc.desc}</div>
+                        <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{proc.prof}</div>
+                      </div>
+                      <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                        <button onClick={() => setEditingProc({ ...proc })} style={{ background: "none", border: `1px solid ${G.g200}`, borderRadius: 6, padding: "2px 8px", fontSize: 11, color: G.g500, cursor: "pointer" }}>✏️</button>
+                        <button onClick={() => { if (window.confirm("Apagar este procedimento?")) save({ ...p, procedures: p.procedures.filter(x => x.id !== proc.id) }); }} style={{ background: "none", border: `1px solid #fee2e2`, borderRadius: 6, padding: "2px 8px", fontSize: 11, color: G.red, cursor: "pointer" }}>×</button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))
             }

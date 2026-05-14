@@ -158,7 +158,10 @@ export default function FinanceiroModule({ patient, onSave }) {
   const [modal, setModal] = useState(null); // "cobranca" | "pagamento"
 
   const saveFin = (newFin) => {
-    const updated = { ...patient, financeiro: newFin, financialStatus: newFin.parcelas.length === 0 || (totalPlano - totalPago <= 0) ? "Em dia" : "Pendente", balance: Math.max(0, totalPlano - totalPago) };
+    // Recalcula sempre com o newFin — garante reconciliação correta
+    // independente da ordem (pagamento antes ou depois do plano)
+    const { totalPlano: tp, totalPago: tpg } = calcResumo(newFin);
+    const updated = { ...patient, financeiro: newFin, financialStatus: tp === 0 || tpg >= tp ? "Em dia" : "Pendente", balance: Math.max(0, tp - tpg) };
     onSave(updated);
   };
 
