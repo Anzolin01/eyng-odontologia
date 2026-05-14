@@ -168,12 +168,14 @@ function ModalProcedimento({ patient, onSave, onClose }) {
 
 function ModalRetorno({ patient, onSave, onClose }) {
   const [date, setDate] = useState(patient.nextReturn || "");
+  const [time, setTime] = useState(patient.nextReturnTime || "");
   return (
     <Modal title="Definir Próximo Retorno" onClose={onClose} width={340}>
       <Field label="Data"><input type="date" style={inputSt} value={date} onChange={e => setDate(e.target.value)} /></Field>
+      <Field label="Hora (opcional)"><input type="time" style={inputSt} value={time} onChange={e => setTime(e.target.value)} /></Field>
       <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
         <button style={btnSec} onClick={onClose}>Cancelar</button>
-        <button style={btnPrim} onClick={() => { if (date) onSave(date); }}>Confirmar</button>
+        <button style={btnPrim} onClick={() => { if (date) onSave(date, time); }}>Confirmar</button>
       </div>
     </Modal>
   );
@@ -361,8 +363,8 @@ function VoiceModule({ patient, onSave, onClose }) {
       was_fallback:       !!editedResult._fallback,
     });
     const updates = {};
-    if (editedResult.procedimento?.descricao) { updates.procedures = [{ id: uid(), date: todayISO(), desc: editedResult.procedimento.descricao, prof: editedResult.procedimento.prof || patient.professional }, ...patient.procedures]; updates.lastVisit = todayISO(); }
-    if (editedResult.retorno?.data_calculada) { const days = getDays(editedResult.retorno.data_calculada); updates.nextReturn = editedResult.retorno.data_calculada; updates.returnStatus = days < 0 ? "overdue" : days === 0 ? "due_today" : "ok"; }
+    if (editedResult.procedimento?.descricao) { const procDate = editedResult.procedimento?.data || todayISO(); updates.procedures = [{ id: uid(), date: procDate, desc: editedResult.procedimento.descricao, prof: editedResult.procedimento.prof || patient.professional }, ...patient.procedures]; updates.lastVisit = procDate; }
+    if (editedResult.retorno?.data_calculada) { const days = getDays(editedResult.retorno.data_calculada); updates.nextReturn = editedResult.retorno.data_calculada; updates.nextReturnTime = editedResult.retorno?.hora || ""; updates.returnStatus = days < 0 ? "overdue" : days === 0 ? "due_today" : "ok"; }
     if (editedResult.novas_preferencias?.length > 0) { updates.notes = [...(patient.notes || []), ...editedResult.novas_preferencias.map(p => ({ id: uid(), type: "preference", text: typeof p === "string" ? p : (p.texto || JSON.stringify(p)) }))]; }
     if (editedResult.lancamento_financeiro) {
       const lf = editedResult.lancamento_financeiro;
@@ -506,7 +508,16 @@ function VoiceModule({ patient, onSave, onClose }) {
             placeholder={isFallback ? "Descreva o que foi realizado..." : ""}
             style={{ ...inputSt, height: 70, resize: "vertical", fontSize: 16 }}
           />
-          <div style={{ marginTop: 6, fontSize: 11, color: G.g500 }}>Prof: {r.procedimento?.prof || patient.professional} · {fmtDate(todayISO())}</div>
+          <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 11, color: G.g500 }}>Data:</span>
+            <input
+              type="date"
+              value={r.procedimento?.data || todayISO()}
+              onChange={e => updateField("procedimento.data", e.target.value)}
+              style={{ ...inputSt, width: "auto", fontSize: 12, padding: "4px 8px" }}
+            />
+            <span style={{ fontSize: 11, color: G.g500 }}>· Prof: {r.procedimento?.prof || patient.professional}</span>
+          </div>
         </ReviewCard>
 
         {/* 🗓 RETORNO — sempre visível (com placeholder se vazio) */}
@@ -525,9 +536,15 @@ function VoiceModule({ patient, onSave, onClose }) {
               style={{ ...inputSt, width: "auto", fontSize: 12, padding: "5px 10px" }}
               placeholder="Selecionar data"
             />
+            <input
+              type="time"
+              value={r.retorno?.hora || ""}
+              onChange={e => updateField("retorno.hora", e.target.value)}
+              style={{ ...inputSt, width: "auto", fontSize: 12, padding: "5px 10px" }}
+            />
           </div>
           {!r.retorno?.prazo_texto && (
-            <div style={{ marginTop: 6, fontSize: 11, color: G.g400 }}>Selecione a data do próximo retorno (opcional)</div>
+            <div style={{ marginTop: 6, fontSize: 11, color: G.g400 }}>Selecione a data e hora do próximo retorno (opcional)</div>
           )}
         </ReviewCard>
 
@@ -776,7 +793,7 @@ function PainelRetornos({ patients, onSelect, onUpdate }) {
         </div>
       )}
       {modalContato && <ModalContato patient={modalContato} onSave={log => { onUpdate({ ...modalContato, contactLog: [log, ...modalContato.contactLog] }); setModalContato(null); }} onClose={() => setModalContato(null)} />}
-      {modalRetorno && <ModalRetorno patient={modalRetorno} onSave={date => { const days = getDays(date); onUpdate({ ...modalRetorno, nextReturn: date, returnStatus: days < 0 ? "overdue" : days === 0 ? "due_today" : "ok" }); setModalRetorno(null); }} onClose={() => setModalRetorno(null)} />}
+      {modalRetorno && <ModalRetorno patient={modalRetorno} onSave={(date, time) => { const days = getDays(date); onUpdate({ ...modalRetorno, nextReturn: date, nextReturnTime: time || "", returnStatus: days < 0 ? "overdue" : days === 0 ? "due_today" : "ok" }); setModalRetorno(null); }} onClose={() => setModalRetorno(null)} />}
     </div>
   );
 }
@@ -943,7 +960,7 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
             <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 800, marginBottom: 10, letterSpacing: 1 }}>🗓 PRÓXIMO RETORNO</div>
             {p.nextReturn ? (
               <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 14, color: "#334155", fontWeight: 600 }}>{fmtDate(p.nextReturn)}</span>
+                <span style={{ fontSize: 14, color: "#334155", fontWeight: 600 }}>{fmtDate(p.nextReturn)}{p.nextReturnTime ? ` às ${p.nextReturnTime}` : ""}</span>
                 <ReturnBadge status={p.returnStatus} nextReturn={p.nextReturn} />
                 <button onClick={() => setModal("retorno")} style={{ ...btnSec, padding: "4px 10px", fontSize: 11 }}>Alterar</button>
                 {p.phone && (
@@ -952,7 +969,8 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
                     const tel = p.phone.replace(/\D/g, "");
                     const num = tel.startsWith("55") ? tel : `55${tel}`;
                     const nome = p.name.split(" ")[0];
-                    const msg = `Olá ${nome}! 😊 Passando para confirmar sua consulta na Eyng Odontologia no dia ${fmtDate(p.nextReturn)}. Por favor, confirme sua presença! Se precisar reagendar, é só responder esta mensagem. Até lá! 🦷`;
+                    const hora = p.nextReturnTime ? ` às ${p.nextReturnTime}` : "";
+                    const msg = `Olá ${nome}! 😊 Passando para confirmar sua consulta na Eyng Odontologia no dia ${fmtDate(p.nextReturn)}${hora}. Por favor, confirme sua presença! Se precisar reagendar, é só responder esta mensagem. Até lá! 🦷`;
                     window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, "_blank");
                   }} style={{ background: "#25D366", color: "#fff", border: "none", borderRadius: 8, padding: "4px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
                     📲 Confirmar via WhatsApp
@@ -1076,7 +1094,7 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
 
       {modal === "nota" && <ModalNota onSave={n => { save({ ...p, notes: [...p.notes, n] }); setModal(null); }} onClose={() => setModal(null)} />}
       {modal === "procedimento" && <ModalProcedimento patient={p} onSave={pr => { save({ ...p, procedures: [pr, ...p.procedures], lastVisit: pr.date }); setModal(null); }} onClose={() => setModal(null)} />}
-      {modal === "retorno" && <ModalRetorno patient={p} onSave={date => { const days = getDays(date); save({ ...p, nextReturn: date, returnStatus: days < 0 ? "overdue" : days === 0 ? "due_today" : "ok" }); setModal(null); }} onClose={() => setModal(null)} />}
+      {modal === "retorno" && <ModalRetorno patient={p} onSave={(date, time) => { const days = getDays(date); save({ ...p, nextReturn: date, nextReturnTime: time || "", returnStatus: days < 0 ? "overdue" : days === 0 ? "due_today" : "ok" }); setModal(null); }} onClose={() => setModal(null)} />}
       {modal === "contato" && <ModalContato patient={p} onSave={log => { save({ ...p, contactLog: [log, ...p.contactLog] }); setModal(null); }} onClose={() => setModal(null)} />}
       {modal === "alergia" && <ModalNota onSave={n => { save({ ...p, allergies: [...p.allergies, n.text] }); setModal(null); }} onClose={() => setModal(null)} />}
 
@@ -1391,14 +1409,17 @@ function AbaArquivos({ patient, onSave }) {
             <div style={{ marginTop:10, display:"flex", gap:8, alignItems:"center" }}>
               <input
                 defaultValue={cefazId}
-                placeholder="Cole o ID do paciente no Cefaz (ex: 39617229)"
+                placeholder="ID numérico do Cefaz (≠ CPF) — ex: 39617229"
                 onBlur={e => {
                   const val = e.target.value.trim();
                   if (val !== cefazId) onSave({ ...patient, cefaz_id: val });
                 }}
                 style={{ flex:1, background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:8, padding:"6px 10px", fontSize:12, color:"#fff", outline:"none", fontFamily:"monospace" }}
               />
-              <span style={{ color:"rgba(255,255,255,0.5)", fontSize:10, whiteSpace:"nowrap" }}>da URL do paciente</span>
+              <span style={{ color:"rgba(255,255,255,0.5)", fontSize:10, whiteSpace:"nowrap" }}>nº na URL do paciente</span>
+            </div>
+            <div style={{ marginTop:6, fontSize:10, color:"rgba(255,255,255,0.45)", lineHeight:1.5 }}>
+              ⚠️ O ID do Cefaz <strong style={{color:"rgba(255,255,255,0.7)"}}>não é o CPF</strong> — é o número que aparece na URL ao abrir o paciente no site max.cfaz.net (ex: …/patient_data/<strong style={{color:"rgba(255,255,255,0.7)"}}>39617229</strong>)
             </div>
           </div>
         );

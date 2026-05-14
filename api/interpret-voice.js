@@ -55,11 +55,20 @@ REGRAS DE EXTRAÇÃO — leia com atenção:
    - Exemplos que ativam este campo: "paciente pagou 200 reais no pix", "ainda deve a consulta", "não pagou hoje", "cobrei 150"
    - null se nada relacionado a dinheiro foi mencionado
 
+7. "procedimento.data": Data em que o procedimento foi realizado, no formato YYYY-MM-DD.
+   - A data de hoje está no início da transcrição como "Data de hoje: YYYY-MM-DD".
+   - Se a dentista disser "hoje" ou não mencionar data → use a data de hoje
+   - Se disser "ontem" → subtraia 1 dia da data de hoje
+   - Se mencionar dia da semana passado ("segunda passada", "sexta") → calcule a data correspondente mais recente
+   - Se mencionar uma data específica ("dia 10", "10/05") → converta para YYYY-MM-DD do mês/ano corrente
+   - Sempre retorne uma string YYYY-MM-DD, nunca null
+
 Responda APENAS com JSON válido, sem markdown, sem explicação, sem texto extra:
 
 {
   "procedimento": {
     "descricao": "descrição clínica profissional do que foi realizado",
+    "data": "YYYY-MM-DD",
     "prof": "${patientContext.professional}"
   },
   "retorno": {
