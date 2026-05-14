@@ -841,7 +841,32 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
   const [editingTreatment, setEditingTreatment] = useState(false);
   const [treatmentDraft, setTreatmentDraft] = useState("");
   const [editingProc, setEditingProc] = useState(null); // { id, date, desc, prof }
+  const [gcalStatus, setGcalStatus] = useState(null); // null | "loading" | "ok" | "err"
   const sp = SP[p.specialty] || SP["Ortodontia"];
+
+  const criarEventoGCal = async () => {
+    setGcalStatus("loading");
+    try {
+      const r = await fetch("/api/google-calendar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patientName: p.name,
+          date: p.nextReturn,
+          time: p.nextReturnTime || "",
+          notes: p.treatment || "",
+        }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Erro");
+      setGcalStatus("ok");
+      track("gcal_event_created", { patient_id: p.id });
+      setTimeout(() => setGcalStatus(null), 4000);
+    } catch (e) {
+      setGcalStatus("err");
+      setTimeout(() => setGcalStatus(null), 4000);
+    }
+  };
 
   // Trackeia abertura do paciente uma vez por mount
   useEffect(() => {
@@ -976,6 +1001,12 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
                     📲 Confirmar via WhatsApp
                   </button>
                 )}
+                <button
+                  onClick={criarEventoGCal}
+                  disabled={gcalStatus === "loading"}
+                  style={{ background: gcalStatus === "ok" ? "#16a34a" : gcalStatus === "err" ? "#dc2626" : "#4285F4", color: "#fff", border: "none", borderRadius: 8, padding: "4px 12px", fontSize: 11, fontWeight: 700, cursor: gcalStatus === "loading" ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 5, opacity: gcalStatus === "loading" ? 0.7 : 1 }}>
+                  {gcalStatus === "loading" ? "⏳ Criando..." : gcalStatus === "ok" ? "✅ Criado!" : gcalStatus === "err" ? "❌ Erro" : "🗓 Criar no Google Agenda"}
+                </button>
               </div>
             ) : (
               <button onClick={() => setModal("retorno")} style={{ ...btnPrim, padding: "7px 14px", fontSize: 12 }}>Definir Retorno</button>
