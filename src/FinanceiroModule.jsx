@@ -221,10 +221,10 @@ export default function FinanceiroModule({ patient, onSave }) {
       {/* Cobranças */}
       <div style={{ background:"#fff", borderRadius:16, padding:16, boxShadow:"0 2px 12px rgba(196,95,130,0.08)" }}>
         <div style={{ fontSize:10, fontWeight:800, color:C.textLight, letterSpacing:1, marginBottom:12 }}>📋 COBRANÇAS DO PLANO</div>
-        {fin.parcelas.length === 0 ? (
+        {fin.parcelas.filter(p => p.status !== "cancelado").length === 0 ? (
           <div style={{ textAlign:"center", padding:"24px 0", color:C.gray, fontSize:13 }}>Nenhuma cobrança cadastrada.</div>
         ) : (
-          fin.parcelas.map(p => {
+          fin.parcelas.filter(p => p.status !== "cancelado").map(p => {
             const st = statusBadge(p.status);
             const vencida = p.status === "pendente" && p.vencimento < todayISO();
             return (

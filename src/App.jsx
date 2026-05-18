@@ -34,8 +34,7 @@ const SP = {
 };
 
 const TODAY = new Date();
-let _id = 200;
-const uid = () => String(++_id);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const getDays = (s) => Math.ceil((new Date(s + "T12:00:00") - TODAY) / 86400000);
 const fmtDate = (s) => { if (!s) return "—"; const [y, m, d] = s.split("-"); return `${d}/${m}/${y}`; };
 const todayISO = () => new Date().toISOString().split("T")[0];
@@ -369,11 +368,23 @@ function VoiceModule({ patient, onSave, onClose }) {
     if (editedResult.lancamento_financeiro) {
       const lf = editedResult.lancamento_financeiro;
       const fin = patient.financeiro || { parcelas: [], pagamentos: [] };
-      const formaMap = { "Pix": "pix", "Dinheiro": "dinheiro", "Cartão": "cartao_credito", "Cartao": "cartao_credito" };
-      const formaKey = formaMap[lf.forma] || "pix";
-      const novoPag = { id: uid(), data: todayISO(), obs: lf.descricao || "Consulta", valor: parseFloat(lf.valor) || 0, forma: formaKey };
-      updates.financeiro = { ...fin, pagamentos: [novoPag, ...fin.pagamentos] };
-      updates.financialStatus = lf.status === "Pago" ? "Em dia" : "Pendente";
+      const valor = parseFloat(lf.valor) || 0;
+      let newFin;
+      if (lf.status === "Pago") {
+        // Pagamento recebido → entra em pagamentos
+        const formaMap = { "Pix": "pix", "Dinheiro": "dinheiro", "Cartão": "cartao_credito", "Cartao": "cartao_credito" };
+        const formaKey = formaMap[lf.forma] || "pix";
+        const novoPag = { id: uid(), data: todayISO(), obs: lf.descricao || "Consulta", valor, forma: formaKey };
+        newFin = { ...fin, pagamentos: [novoPag, ...fin.pagamentos] };
+      } else {
+        // Dívida pendente → entra como cobrança (não como pagamento)
+        const novaCob = { id: uid(), desc: lf.descricao || "Débito pendente", valor, vencimento: todayISO(), tipo: "avulso", status: "pendente" };
+        newFin = { ...fin, parcelas: [...fin.parcelas, novaCob] };
+      }
+      const { totalPlano: tp, totalPago: tpg } = calcResumo(newFin);
+      updates.financeiro = newFin;
+      updates.financialStatus = tp === 0 || tpg >= tp ? "Em dia" : "Pendente";
+      updates.balance = Math.max(0, tp - tpg);
     }
     setTimeout(() => { onSave({ ...patient, ...updates }); setStage("success"); setSaving(false); setTimeout(() => onClose(), 2000); }, 600);
   };
@@ -390,12 +401,6 @@ function VoiceModule({ patient, onSave, onClose }) {
   };
 
   const WaveBar = ({ delay }) => <div style={{ width: 3, height: 6, background: G.gold, borderRadius: 2, animation: `waveBar 0.8s ease-in-out ${delay}s infinite` }} />;
-  const ReviewCard = ({ color, icon, title, children, delay = 0 }) => (
-    <div className="review-card" style={{ background: G.surface, border: `1px solid ${G.g200}`, borderLeft: `4px solid ${color}`, borderRadius: 10, padding: "14px 16px", marginBottom: 12, animationDelay: `${delay}s` }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 }}>{icon} {title}</div>
-      {children}
-    </div>
-  );
 
   if (stage === "idle") return (
     <div style={{ textAlign: "center", padding: "10px 0 20px" }}>
@@ -832,6 +837,14 @@ function ListaPacientes({ patients, onSelect }) {
   );
 }
 
+// ── ReviewCard — fora do VoiceModule para não perder foco no re-render ──
+const ReviewCard = ({ color, icon, title, children, delay = 0 }) => (
+  <div className="review-card" style={{ background: G.surface, border: `1px solid ${G.g200}`, borderLeft: `4px solid ${color}`, borderRadius: 10, padding: "14px 16px", marginBottom: 12, animationDelay: `${delay}s` }}>
+    <div style={{ fontSize: 11, fontWeight: 700, color, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 }}>{icon} {title}</div>
+    {children}
+  </div>
+);
+
 // ── DETALHE DO PACIENTE ──
 function DetalhePaciente({ patient, onBack, onUpdate }) {
   const [p, setP] = useState(patient);
@@ -874,6 +887,8 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
   }, [patient.id]);
 
   const save = u => { setP(u); onUpdate(u); };
+  // saveF: usa functional update — garante que `prev` é sempre o estado mais recente, sem closure stale
+  const saveF = fn => setP(prev => { const u = fn(prev); onUpdate(u); return u; });
   const rLabel = { confirmado: "Confirmou retorno", reagendou: "Reagendou", sem_resposta: "Sem resposta", nao_atendeu: "Não atendeu", recusou: "Recusou" };
   const rColor = { confirmado: G.green, reagendou: G.blue, sem_resposta: G.g500, nao_atendeu: G.orange, recusou: G.red };
   const initials = p.name.split(" ").slice(0, 2).map(w => w[0]).join("");
@@ -1024,7 +1039,7 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
             <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 800, marginBottom: 12, letterSpacing: 1 }}>📅 HISTÓRICO DE PROCEDIMENTOS</div>
             {p.procedures.length === 0
               ? <div style={{ textAlign: "center", padding: "18px 0", color: "#94a3b8", fontSize: 13 }}>Nenhum procedimento registrado.</div>
-              : p.procedures.map((proc) => (
+              : [...p.procedures].sort((a, b) => (b.date || "").localeCompare(a.date || "")).map((proc) => (
                 <div key={proc.id} style={{ paddingBottom: 12, marginBottom: 12, borderBottom: "1px solid #f1f5f9" }}>
                   {editingProc?.id === proc.id ? (
                     <div>
@@ -1036,7 +1051,7 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
                       </div>
                       <textarea value={editingProc.desc} onChange={e => setEditingProc(ep => ({ ...ep, desc: e.target.value }))} style={{ ...inputSt, height: 70, fontSize: 16, resize: "vertical", marginBottom: 6 }} />
                       <div style={{ display: "flex", gap: 8 }}>
-                        <button onClick={() => { save({ ...p, procedures: p.procedures.map(x => x.id === proc.id ? editingProc : x) }); setEditingProc(null); }} style={{ ...btnPrim, padding: "5px 14px", fontSize: 11 }}>Salvar</button>
+                        <button onClick={() => { saveF(prev => ({ ...prev, procedures: prev.procedures.map(x => x.id === proc.id ? editingProc : x) })); setEditingProc(null); }} style={{ ...btnPrim, padding: "5px 14px", fontSize: 11 }}>Salvar</button>
                         <button onClick={() => setEditingProc(null)} style={{ ...btnSec, padding: "5px 14px", fontSize: 11 }}>Cancelar</button>
                       </div>
                     </div>
@@ -1049,7 +1064,7 @@ function DetalhePaciente({ patient, onBack, onUpdate }) {
                       </div>
                       <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                         <button onClick={() => setEditingProc({ ...proc })} style={{ background: "none", border: `1px solid ${G.g200}`, borderRadius: 6, padding: "2px 8px", fontSize: 11, color: G.g500, cursor: "pointer" }}>✏️</button>
-                        <button onClick={() => { if (window.confirm("Apagar este procedimento?")) save({ ...p, procedures: p.procedures.filter(x => x.id !== proc.id) }); }} style={{ background: "none", border: `1px solid #fee2e2`, borderRadius: 6, padding: "2px 8px", fontSize: 11, color: G.red, cursor: "pointer" }}>×</button>
+                        <button onClick={() => { if (window.confirm("Apagar este procedimento?")) saveF(prev => ({ ...prev, procedures: prev.procedures.filter(x => x.id !== proc.id) })); }} style={{ background: "none", border: `1px solid #fee2e2`, borderRadius: 6, padding: "2px 8px", fontSize: 11, color: G.red, cursor: "pointer" }}>×</button>
                       </div>
                     </div>
                   )}
