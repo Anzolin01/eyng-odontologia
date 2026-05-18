@@ -1910,9 +1910,11 @@ export default function App() {
             <PainelRetornos patients={patients} onSelect={setSelected} onUpdate={updatePatient} />
           ) : view === "agenda" ? (
             <Agenda patients={patients} onImportarPacientes={async (lista) => {
+              const hoje = new Date().toLocaleDateString("pt-BR");
+              const novosPatients = [];
               for (const item of lista) {
                 const novo = {
-                  id: Date.now() + Math.random(),
+                  id: uid(),
                   name: item.nome,
                   phone: "",
                   birth: "",
@@ -1923,19 +1925,23 @@ export default function App() {
                   financialStatus: "Em dia",
                   balance: 0,
                   allergies: [],
-                  notes: [{ id: uid(), type: "preference", text: `Importado do Google Calendar em ${new Date().toLocaleDateString("pt-BR")}` }],
+                  notes: [{ id: uid(), type: "preference", text: `Importado do Google Calendar em ${hoje}` }],
                   procedures: [],
                   contactLog: [],
                   lastVisit: item.ultimaConsulta || "",
                   nextReturn: "",
                   returnStatus: "ok",
                 };
-                const { data, error } = await import("./supabase").then(m => m.supabase.from("patients").insert({ data: novo }).select());
+                const { data, error } = await supabase.from("patients").insert({ data: novo }).select();
                 if (!error && data?.[0]) {
-                  setPatients(ps => [...ps, { ...novo, supabaseId: data[0].id }]);
+                  novosPatients.push({ ...novo, supabaseId: data[0].id });
                 } else {
-                  setPatients(ps => [...ps, novo]);
+                  console.warn("[Import] Erro ao salvar paciente:", item.nome, error);
+                  novosPatients.push(novo);
                 }
+              }
+              if (novosPatients.length > 0) {
+                setPatients(ps => [...ps, ...novosPatients]);
               }
             }} />
           ) : view === "caixa" ? (

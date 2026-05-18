@@ -588,9 +588,15 @@ function ModalSyncGoogle({ patients, onImportar, onClose }) {
   useEffect(() => { buscar(); }, []);
 
   // Quais nomes já existem no app
-  const jaExiste = (nome) => patients.some(
-    p => p.name.toLowerCase().includes(nome.toLowerCase().split(" ")[0])
-  );
+  // Exige que TODAS as palavras do nome do calendário (≥3 chars) apareçam no nome do paciente.
+  // Evita falsos positivos: "Ana Lima" não bloqueia "Ana Souza".
+  const jaExiste = (nome) => {
+    const palavras = nome.toLowerCase().split(/\s+/).filter(p => p.length >= 3);
+    if (palavras.length === 0) return false;
+    return patients.some(p =>
+      palavras.every(palavra => p.name.toLowerCase().includes(palavra))
+    );
+  };
 
   const novos = dados?.nomesPacientes.filter(n => !jaExiste(n.nome)) || [];
   const jatem = dados?.nomesPacientes.filter(n =>  jaExiste(n.nome)) || [];

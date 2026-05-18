@@ -52,7 +52,7 @@ REGRAS DE EXTRAÇÃO — leia com atenção:
    - valor: número em reais, sem símbolo (ex: 150.00). null se não mencionado.
    - forma: "Pix", "Dinheiro", "Cartão", "Pendente" — se não souber, use "Pendente"
    - status: "Pago" se pagou, "Pendente" se deve ou não pagou
-   - Exemplos que ativam este campo: "paciente pagou 200 reais no pix", "ainda deve a consulta", "não pagou hoje", "cobrei 150"
+   - Exemplos que ativam este campo: "paciente pagou 200 reais no pix", "ainda deve a consulta", "não pagou hoje", "cobrei 150", "está devendo", "paciente deve", "ficou devendo", "não pagou", "tem débito pendente"
    - null se nada relacionado a dinheiro foi mencionado
 
 7. "procedimento.data": Data em que o procedimento foi realizado, no formato YYYY-MM-DD.
