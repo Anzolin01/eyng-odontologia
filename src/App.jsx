@@ -1170,6 +1170,12 @@ const CLINICA = {
   cnpj: "37.534.793/0001-09",
   cidade: "Chapecó",
   profissional: "Dra. Caroline Eyng",
+  profissionais: [
+    { nome: "Dra. Caroline Mazzarolo Eyng", cro: "CRO/SC 10255" },
+    { nome: "Dr. João Beno Eyng Junior",    cro: "CRO/SC 10239" },
+  ],
+  endereco: "Policlínica Rio Branco | Sala 3 | Rua Barão do Rio Branco, 406-E | CEP 89.802-100 | Chapecó/SC",
+  fone: "Fone (49) 3329-7757 | Cel. (49) 98436-4313",
 };
 
 const TIPOS_DOC = [
@@ -1196,53 +1202,65 @@ function AbaReceituario({ patient }) {
     const base = `
       <style>
         body{font-family:'Times New Roman',serif;max-width:700px;margin:40px auto;padding:0 20px;color:#111;}
-        h1{font-size:22px;font-weight:bold;margin:0;}
-        h2{font-size:14px;font-weight:normal;color:#444;margin:2px 0 24px;}
-        .linha{border-bottom:1px solid #999;margin:8px 0 20px;}
+        .cabecalho{text-align:center;margin-bottom:10px;}
+        .cabecalho-titulo{font-size:28px;font-weight:900;letter-spacing:4px;color:#c8a96e;font-family:'Times New Roman',serif;}
+        .cabecalho-sub{font-size:11px;letter-spacing:6px;color:#c8a96e;text-transform:uppercase;margin-top:-4px;}
+        .dentistas{display:flex;justify-content:space-between;margin:10px 0 6px;}
+        .dentista{font-size:12px;color:#8b3458;font-weight:bold;}
+        .dentista-cro{font-size:11px;color:#999;font-weight:normal;}
+        .linha-topo{border-top:2px solid #8b3458;border-bottom:1px solid #c8a96e;height:4px;margin-bottom:24px;}
+        h3{text-align:center;font-size:16px;text-decoration:underline;margin:0 0 20px;}
         .med{margin-bottom:18px;}
-        .med-nome{font-weight:bold;font-size:15px;text-transform:uppercase;letter-spacing:.5px;}
-        .med-pos{font-size:14px;margin-top:4px;line-height:1.6;}
+        .med-nome{font-weight:bold;font-size:14px;text-transform:uppercase;letter-spacing:.5px;}
+        .med-pos{font-size:13px;margin-top:4px;line-height:1.6;padding-left:16px;}
         .assinatura{margin-top:60px;text-align:right;}
-        .assinatura-linha{border-bottom:1px solid #111;width:240px;display:inline-block;margin-bottom:4px;}
-        .rodape{font-size:11px;color:#666;text-align:center;margin-top:40px;}
+        .assinatura-linha{border-bottom:1px solid #111;width:260px;display:inline-block;margin-bottom:4px;}
+        .rodape{font-size:10px;color:#666;text-align:center;margin-top:48px;border-top:1px solid #ddd;padding-top:8px;line-height:1.6;}
         p{line-height:1.8;font-size:13px;}
       </style>
-      <h1>${CLINICA.nome}</h1>
-      <h2>${CLINICA.profissional} · CNPJ ${CLINICA.cnpj}</h2>
-      <div class="linha"></div>
+      <div class="cabecalho">
+        <div class="cabecalho-titulo">EYNG</div>
+        <div class="cabecalho-sub">Odontologia</div>
+      </div>
+      <div class="dentistas">
+        ${CLINICA.profissionais.map(p => `<div><div class="dentista">${p.nome}</div><div class="dentista-cro">${p.cro}</div></div>`).join("")}
+      </div>
+      <div class="linha-topo"></div>
     `;
 
+    const rodape = `<div class="rodape">${CLINICA.endereco}<br>${CLINICA.fone}</div>`;
     if (tipo === "receita") {
       const medsHtml = meds.filter(m => m.nome.trim()).map(m =>
         `<div class="med"><div class="med-nome">${m.nome}</div><div class="med-pos">${m.posologia || ""}</div></div>`
       ).join("");
-      return base + `<p><strong>Paciente:</strong> ${patient.name}</p><br>${medsHtml}
+      return base + `<p style="border-bottom:1px solid #333;padding-bottom:4px;font-size:14px;"><strong>${patient.name}</strong></p>
+        <p style="font-size:13px;margin-bottom:20px;">Uso interno:</p>
+        ${medsHtml}
         <div class="assinatura"><div class="assinatura-linha"></div><br>${CLINICA.profissional}<br>${CLINICA.cidade}, ${hoje}</div>
-        <div class="rodape">${CLINICA.nome} · ${CLINICA.cidade}</div>`;
+        ${rodape}`;
     }
     if (tipo === "lgpd") {
-      return base + `<h3 style="text-align:center;">TERMO DE CONSENTIMENTO PARA TRATAMENTO DE DADOS PESSOAIS<br><small>Lei Geral de Proteção de Dados Pessoais — LGPD</small></h3>
+      return base + `<h3>TERMO DE CONSENTIMENTO PARA TRATAMENTO DE DADOS PESSOAIS<br><small>Lei Geral de Proteção de Dados Pessoais — LGPD</small></h3>
         <p>EU <strong>${patient.name}</strong>, CPF: ______________________, aqui denominado(a) como TITULAR, venho por meio deste, AUTORIZAR que a empresa <strong>${CLINICA.nome}</strong>, inscrita no CNPJ ${CLINICA.cnpj}, disponha dos meus dados pessoais, para fins cadastrais, atendimento odontológico, solicitações de exames e arquivo em prontuário eletrônico e físico, de acordo com os artigos 7º e 11 da Lei nº 13.709/2018, por livre e espontânea vontade.</p>
         <p>O Titular autoriza o Consultório a utilizar: nome completo, data de nascimento, filiação, RG, CPF, fotografia, endereço, telefone, WhatsApp, e-mail, comunicações escritas e verbais, exames e atestados.</p>
-        <div class="assinatura"><div class="assinatura-linha"></div><br>Assinatura do Titular<br>${CLINICA.cidade}, ${hoje}</div>`;
+        <div class="assinatura"><div class="assinatura-linha"></div><br>Assinatura do Titular<br>${CLINICA.cidade}, ${hoje}</div>${rodape}`;
     }
     if (tipo === "comparecimento") {
-      return base + `<h3 style="text-align:center;">DECLARAÇÃO DE COMPARECIMENTO</h3>
+      return base + `<h3>DECLARAÇÃO DE COMPARECIMENTO</h3>
         <p>Declaramos que o(a) paciente <strong>${patient.name}</strong> compareceu a esta clínica odontológica para tratamento na data de <strong>${hoje}</strong>.</p>
         <p>${texto || "Observações: ___________________________________________________"}</p>
-        <div class="assinatura"><div class="assinatura-linha"></div><br>${CLINICA.profissional}<br>${CLINICA.cidade}, ${hoje}</div>`;
+        <div class="assinatura"><div class="assinatura-linha"></div><br>${CLINICA.profissional}<br>${CLINICA.cidade}, ${hoje}</div>${rodape}`;
     }
     if (tipo === "atestado") {
-      return base + `<h3 style="text-align:center;">ATESTADO ODONTOLÓGICO</h3>
-        <p>Atestamos que o(a) paciente <strong>${patient.name}</strong> esteve sob nossos cuidados odontológicos na data de <strong>${hoje}</strong>, necessitando de repouso por <strong>____</strong> dia(s).</p>
-        <p>${texto || ""}</p>
-        <div class="assinatura"><div class="assinatura-linha"></div><br>${CLINICA.profissional}<br>${CLINICA.cidade}, ${hoje}</div>`;
+      return base + `<h3>ATESTADO ODONTOLÓGICO</h3>
+        <p>Atesto que o(a) paciente <strong>${patient.name}</strong> esteve sob meus cuidados profissionais no dia <strong>${hoje}</strong>, necessitando de repouso por <strong>____</strong> dia(s), por motivo de ${texto || "_________________________________________"}.</p>
+        <div class="assinatura"><div class="assinatura-linha"></div><br>${CLINICA.profissional}<br>${CLINICA.cidade}, ${hoje}</div>${rodape}`;
     }
     if (tipo === "orcamento") {
-      return base + `<h3 style="text-align:center;">ORÇAMENTO DE TRATAMENTO</h3>
+      return base + `<h3>ORÇAMENTO DE TRATAMENTO</h3>
         <p><strong>Paciente:</strong> ${patient.name}</p><br>
         <p style="white-space:pre-wrap;">${texto || "Descreva os procedimentos e valores aqui..."}</p>
-        <div class="assinatura"><div class="assinatura-linha"></div><br>${CLINICA.profissional}<br>${CLINICA.cidade}, ${hoje}</div>`;
+        <div class="assinatura"><div class="assinatura-linha"></div><br>${CLINICA.profissional}<br>${CLINICA.cidade}, ${hoje}</div>${rodape}`;
     }
     return base;
   };
@@ -1255,6 +1273,20 @@ function AbaReceituario({ patient }) {
     w.document.close();
     w.focus();
     setTimeout(() => w.print(), 400);
+  };
+
+  const baixarWord = () => {
+    track("receituario_word", { patient_id: patient.id, tipo });
+    const tipoLabel = TIPOS_DOC.find(t => t.id === tipo)?.label.replace(/[^\w]/g, "") || tipo;
+    const nomePaciente = patient.name.replace(/\s+/g, "_");
+    const conteudo = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='UTF-8'><title>${tipoLabel} — ${patient.name}</title></head><body>${gerarHTML()}</body></html>`;
+    const blob = new Blob([conteudo], { type: "application/msword" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${tipoLabel}_${nomePaciente}.doc`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const inp = { width:"100%", border:"1px solid #e2e8f0", borderRadius:8, padding:"8px 10px", fontSize:13, fontFamily:"inherit", background:"#fff", color:"#334155", outline:"none", boxSizing:"border-box" };
@@ -1306,10 +1338,15 @@ function AbaReceituario({ patient }) {
         </div>
       )}
 
-      {/* Botão imprimir */}
-      <button onClick={imprimir} style={{ background:"linear-gradient(135deg,#c45f82,#8b3458)", color:"#fff", border:"none", borderRadius:14, padding:"14px 20px", fontSize:14, fontWeight:800, cursor:"pointer", boxShadow:"0 6px 20px rgba(196,95,130,0.4)", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
-        🖨️ Gerar e Imprimir
-      </button>
+      {/* Botões de ação */}
+      <div style={{ display:"flex", gap:10 }}>
+        <button onClick={baixarWord} style={{ flex:1, background:"linear-gradient(135deg,#2563eb,#1e40af)", color:"#fff", border:"none", borderRadius:14, padding:"14px 20px", fontSize:13, fontWeight:800, cursor:"pointer", boxShadow:"0 6px 20px rgba(37,99,235,0.35)", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+          📄 Baixar Word
+        </button>
+        <button onClick={imprimir} style={{ flex:1, background:"linear-gradient(135deg,#c45f82,#8b3458)", color:"#fff", border:"none", borderRadius:14, padding:"14px 20px", fontSize:13, fontWeight:800, cursor:"pointer", boxShadow:"0 6px 20px rgba(196,95,130,0.4)", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+          🖨️ Imprimir
+        </button>
+      </div>
     </div>
   );
 }
