@@ -1909,7 +1909,35 @@ export default function App() {
           ) : view === "painel" ? (
             <PainelRetornos patients={patients} onSelect={setSelected} onUpdate={updatePatient} />
           ) : view === "agenda" ? (
-            <Agenda patients={patients} />
+            <Agenda patients={patients} onImportarPacientes={async (lista) => {
+              for (const item of lista) {
+                const novo = {
+                  id: Date.now() + Math.random(),
+                  name: item.nome,
+                  phone: "",
+                  birth: "",
+                  cpf: "",
+                  professional: "Dra. Caroline",
+                  specialty: "Clínico Geral",
+                  treatment: "",
+                  financialStatus: "Em dia",
+                  balance: 0,
+                  allergies: [],
+                  notes: [{ id: uid(), type: "preference", text: `Importado do Google Calendar em ${new Date().toLocaleDateString("pt-BR")}` }],
+                  procedures: [],
+                  contactLog: [],
+                  lastVisit: item.ultimaConsulta || "",
+                  nextReturn: "",
+                  returnStatus: "ok",
+                };
+                const { data, error } = await import("./supabase").then(m => m.supabase.from("patients").insert({ data: novo }).select());
+                if (!error && data?.[0]) {
+                  setPatients(ps => [...ps, { ...novo, supabaseId: data[0].id }]);
+                } else {
+                  setPatients(ps => [...ps, novo]);
+                }
+              }
+            }} />
           ) : view === "caixa" ? (
             <CaixaDia patients={patients} onSavePatient={updatePatient} />
           ) : (

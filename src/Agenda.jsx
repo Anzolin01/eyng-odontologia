@@ -566,8 +566,148 @@ function ModalListaEspera({ onClose }) {
   );
 }
 
+// ── Modal Sync Google Calendar ──
+function ModalSyncGoogle({ patients, onImportar, onClose }) {
+  const [status, setStatus] = useState("idle"); // idle | loading | ok | err
+  const [dados,  setDados]  = useState(null);
+  const [selecionados, setSelecionados] = useState(new Set());
+
+  const buscar = async () => {
+    setStatus("loading");
+    try {
+      const r = await fetch("/api/agenda-import");
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Erro");
+      setDados(d);
+      setStatus("ok");
+    } catch (e) {
+      setStatus("err");
+    }
+  };
+
+  useEffect(() => { buscar(); }, []);
+
+  // Quais nomes já existem no app
+  const jaExiste = (nome) => patients.some(
+    p => p.name.toLowerCase().includes(nome.toLowerCase().split(" ")[0])
+  );
+
+  const novos = dados?.nomesPacientes.filter(n => !jaExiste(n.nome)) || [];
+  const jatem = dados?.nomesPacientes.filter(n =>  jaExiste(n.nome)) || [];
+
+  const toggleSel = (nome) => setSelecionados(prev => {
+    const next = new Set(prev);
+    next.has(nome) ? next.delete(nome) : next.add(nome);
+    return next;
+  });
+
+  const handleImportar = () => {
+    const lista = novos.filter(n => selecionados.has(n.nome));
+    onImportar(lista);
+  };
+
+  return (
+    <Modal title="☁️ Sincronizar Google Agenda" onClose={onClose} width={560}>
+
+      {/* Calendários detectados */}
+      {dados?.calendarios && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: C.textLight, letterSpacing: 1, marginBottom: 8 }}>CALENDÁRIOS ENCONTRADOS</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {dados.calendarios.map(c => (
+              <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 6, background: "#fff", border: "1.5px solid #fce8ee", borderRadius: 10, padding: "6px 12px", fontSize: 12, fontWeight: 700, color: C.text }}>
+                <div style={{ width: 10, height: 10, borderRadius: "50%", background: c.cor || C.primary, flexShrink: 0 }} />
+                {c.nome} {c.primary ? "⭐" : ""}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {status === "loading" && (
+        <div style={{ textAlign: "center", padding: 40, color: C.gray }}>
+          <div style={{ fontSize: 24, marginBottom: 10 }}>⏳</div>
+          <div style={{ fontSize: 13 }}>Buscando eventos nos últimos 30 e próximos 90 dias...</div>
+        </div>
+      )}
+
+      {status === "err" && (
+        <div style={{ textAlign: "center", padding: 30, color: "#dc2626", fontSize: 13 }}>
+          ❌ Não foi possível acessar o Google Calendar.<br/>
+          <button onClick={buscar} style={{ marginTop: 12, background: C.bgMed, border: "none", borderRadius: 8, padding: "7px 16px", fontSize: 12, color: C.dark, cursor: "pointer", fontFamily: "Nunito,sans-serif" }}>Tentar novamente</button>
+        </div>
+      )}
+
+      {status === "ok" && dados && (
+        <>
+          <div style={{ fontSize: 11, color: C.gray, marginBottom: 14 }}>
+            📅 Período: {dados.periodo.inicio} a {dados.periodo.fim} · {dados.eventos.length} eventos encontrados
+          </div>
+
+          {/* Novos — não estão no app */}
+          {novos.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: "#dc2626", letterSpacing: 1, marginBottom: 8 }}>
+                🆕 NÃO CADASTRADOS NO APP ({novos.length})
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 220, overflowY: "auto" }}>
+                {novos.map(n => (
+                  <div key={n.nome} onClick={() => toggleSel(n.nome)}
+                    style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 12, cursor: "pointer", border: `1.5px solid ${selecionados.has(n.nome) ? C.primary : "#fce8ee"}`, background: selecionados.has(n.nome) ? `${C.primary}12` : "#fff", transition: "all .15s" }}>
+                    <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${selecionados.has(n.nome) ? C.primary : "#d1d5db"}`, background: selecionados.has(n.nome) ? C.primary : "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 11, color: "#fff" }}>
+                      {selecionados.has(n.nome) ? "✓" : ""}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{n.nome}</div>
+                      <div style={{ fontSize: 11, color: C.gray }}>{n.totalEventos} evento{n.totalEventos !== 1 ? "s" : ""} · último: {n.ultimaConsulta || "—"}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: 10, marginTop: 12, alignItems: "center" }}>
+                <button onClick={() => setSelecionados(new Set(novos.map(n => n.nome)))}
+                  style={{ fontSize: 11, color: C.primary, background: "none", border: "none", cursor: "pointer", fontFamily: "Nunito,sans-serif", fontWeight: 700 }}>
+                  Selecionar todos
+                </button>
+                <button onClick={() => setSelecionados(new Set())}
+                  style={{ fontSize: 11, color: C.gray, background: "none", border: "none", cursor: "pointer", fontFamily: "Nunito,sans-serif" }}>
+                  Limpar
+                </button>
+                <div style={{ flex: 1 }} />
+                <BtnPrim label={`Importar ${selecionados.size > 0 ? `(${selecionados.size})` : ""}`} icon="➕" onClick={handleImportar} disabled={selecionados.size === 0} small />
+              </div>
+            </div>
+          )}
+
+          {novos.length === 0 && (
+            <div style={{ textAlign: "center", padding: "18px 0", color: "#16a34a", fontSize: 13, fontWeight: 700 }}>
+              ✅ Todos os pacientes da agenda já estão cadastrados no app!
+            </div>
+          )}
+
+          {/* Já cadastrados */}
+          {jatem.length > 0 && (
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 800, color: "#16a34a", letterSpacing: 1, marginBottom: 8 }}>
+                ✅ JÁ CADASTRADOS ({jatem.length})
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {jatem.map(n => (
+                  <span key={n.nome} style={{ background: "#dcfce7", color: "#15803d", borderRadius: 20, padding: "3px 12px", fontSize: 11, fontWeight: 700 }}>
+                    {n.nome}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </Modal>
+  );
+}
+
 // ── COMPONENTE PRINCIPAL ──
-export default function Agenda({ patients }) {
+export default function Agenda({ patients, onImportarPacientes }) {
   const [date, setDate]         = useState(todayISO());
   const [appts, setAppts]       = useState([]);
   const [loadingDb, setLoadingDb] = useState(true);
@@ -575,6 +715,8 @@ export default function Agenda({ patients }) {
   const [modalDetalhe, setModalDetalhe]   = useState(null); // appt
   const [modalFechar, setModalFechar]     = useState(false);
   const [modalEspera, setModalEspera]     = useState(false);
+  const [modalSync,   setModalSync]       = useState(false);
+  const [importados,  setImportados]      = useState(0);
 
   // Contador fila de espera (reativo ao localStorage)
   const [qtdEspera, setQtdEspera] = useState(() => {
@@ -666,6 +808,10 @@ export default function Agenda({ patients }) {
           <input type="date" value={date} onChange={e=>setDate(e.target.value)}
             style={{border:`1.5px solid #fce8ee`,borderRadius:10,padding:"8px 12px",fontSize:12,color:C.text,fontFamily:"Nunito,sans-serif",outline:"none"}}/>
           <BtnPrim label="+ Agendar" icon="📅" onClick={()=>setModalNovo({hora:"09:00",profissional:PROFS[0]})} small/>
+          <button onClick={()=>setModalSync(true)}
+            style={{background:"linear-gradient(135deg,#0ea5e9,#0284c7)",color:"#fff",border:"none",borderRadius:10,padding:"7px 14px",fontSize:11,fontWeight:800,fontFamily:"Nunito,sans-serif",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+            ☁️ Sync Google {importados > 0 ? `(${importados} importados)` : ""}
+          </button>
           <button onClick={()=>setModalEspera(true)}
             style={{background:`linear-gradient(135deg,${C.primary},${C.dark})`,color:"#fff",border:"none",borderRadius:10,padding:"7px 14px",fontSize:11,fontWeight:800,fontFamily:"Nunito,sans-serif",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
             🪑 Fila de Espera {qtdEspera > 0 ? `(${qtdEspera})` : ""}
@@ -778,6 +924,18 @@ export default function Agenda({ patients }) {
       )}
       {modalEspera && (
         <ModalListaEspera onClose={()=>{ setModalEspera(false); refreshQtdEspera(); }}/>
+      )}
+      {modalSync && (
+        <ModalSyncGoogle
+          patients={patients}
+          onImportar={async (lista) => {
+            if (!onImportarPacientes || lista.length === 0) { setModalSync(false); return; }
+            await onImportarPacientes(lista);
+            setImportados(v => v + lista.length);
+            setModalSync(false);
+          }}
+          onClose={() => setModalSync(false)}
+        />
       )}
     </div>
   );
