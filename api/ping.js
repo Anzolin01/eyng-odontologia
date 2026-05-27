@@ -7,17 +7,11 @@
  */
 import { createClient } from "@supabase/supabase-js";
 
+// Mesmas credenciais usadas no frontend (anon key — pública por design)
+const SUPABASE_URL = "https://swwxrybldjfhicdurnch.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3d3hyeWJsZGpmaGljZHVybmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNzAzMzMsImV4cCI6MjA5Mjk0NjMzM30.ba1232EYersCtHILmSm5pv4Sb6fgtMUuaNyDC07AjDY";
+
 export default async function handler(req, res) {
-  const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-
-  if (!SUPABASE_URL || !SUPABASE_KEY) {
-    return res.status(500).json({
-      ok: false,
-      error: "Supabase não configurado (faltam env vars)",
-    });
-  }
-
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
