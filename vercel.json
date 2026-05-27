@@ -3,5 +3,11 @@
     { "source": "/api/interpret-voice", "destination": "/api/interpret-voice" },
     { "source": "/api/test-key", "destination": "/api/test-key" },
     { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "crons": [
+    {
+      "path": "/api/ping",
+      "schedule": "0 12 */5 * *"
+    }
   ]
 }
