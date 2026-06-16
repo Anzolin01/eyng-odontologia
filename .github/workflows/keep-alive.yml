@@ -1,0 +1,21 @@
+name: Keep Supabase Alive
+
+# Mantém o banco Supabase (plano Free) ativo, pingando /api/ping a cada 6h.
+# Evita o pause automático por inatividade (7 dias).
+# Roda no GitHub Actions — mais confiável que o cron do Vercel Hobby.
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"   # a cada 6 horas
+  workflow_dispatch:          # permite rodar manualmente pelo botão do GitHub
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pingar o app
+        run: |
+          echo "Pingando em $(date -u)..."
+          RESP=$(curl -s -w "\nHTTP:%{http_code}" https://eyng-odontologia.vercel.app/api/ping)
+          echo "$RESP"
+          echo "$RESP" | grep -q '"ok":true' || (echo "::error::Ping falhou" && exit 1)
