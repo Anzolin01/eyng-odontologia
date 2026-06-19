@@ -15,6 +15,7 @@ const BLACKLIST_NOMES = new Set([
   "dentista","médico","medico","consulta","retorno","avaliação","avaliacao",
   "aniversário","aniversario","entrega","buscar","ligar","ligar para",
   "reunião de","reuniao de","visita","visita técnica","visita tecnica",
+  "chamar","pagar","confirmar","agendar","marcar","cancelar","reagendar","bloqueado","bloqueio",
 ]);
 
 const isNomeValido = (nome) => {
