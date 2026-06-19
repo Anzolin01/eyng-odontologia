@@ -92,9 +92,14 @@ export default async function handler(req, res) {
 
     const todosEventos = [];
 
+    // Só lê os calendários da clínica (não a agenda pessoal de quem autorizou).
+    // Configurável por env AGENDA_CLINICA_IDS (lista separada por vírgula).
+    const AGENDA_CLINICA = (process.env.AGENDA_CLINICA_IDS || "dr.joaobeno@gmail.com")
+      .split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+
     for (const cal of calendarios) {
-      // Pula calendários de feriados e contatos — não têm consultas
-      if (cal.id.includes("holiday") || cal.id.includes("contacts")) continue;
+      // Processa apenas os calendários da clínica
+      if (!AGENDA_CLINICA.includes(cal.id.toLowerCase())) continue;
 
       // Paginação: Google retorna no máximo 250 por página
       let pageToken = null;
