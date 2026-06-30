@@ -18,7 +18,21 @@ const BLACKLIST_NOMES = new Set([
   "chamar","pagar","confirmar","agendar","marcar","cancelar","reagendar","bloqueado","bloqueio",
   "mensagem","whatsapp","wpp","exame","orçamento","orcamento","financeiro",
   "cobrança","cobranca","obs","observação","observacao","fechado","feriado nacional",
+  "não marcar","nao marcar","compromisso",
 ]);
+
+// Palavras de procedimento que aparecem grudadas no nome sem vírgula/traço
+// (ex: "Maria Clara canal", "Ruberlan botox", "Anderson Marques retorno limpeza").
+// Comparadas sem acento — ver removerAcentos().
+const PROCEDURE_KEYWORDS = new Set([
+  "limpeza","canal","botox","rc","porcelana","retorno","exo","remocao",
+  "orto","contencao","colar","obturacao","sisos","siso","extracao","clareamento",
+  "protese","implante","polimento","raspagem","moldagem","manutencao","ajuste",
+  "restauracao","profilaxia","facetas","faceta","resina","coroa","periodontia",
+  "urgencia","clinico","geral","raiox","rx","depilacao","compromisso","avaliacao",
+]);
+
+const removerAcentos = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "");
 
 const isNomeValido = (nome) => {
   if (!nome || nome.length < 3) return false;
@@ -33,8 +47,27 @@ const isNomeValido = (nome) => {
   return true;
 };
 
+// Corta o título a partir da primeira palavra de procedimento encontrada
+// (ex: "Maria Clara canal" -> "Maria Clara"; "Ruberlan botox" -> "Ruberlan").
+const truncarNoProcedimento = (nome) => {
+  const palavras = nome.split(/\s+/);
+  for (let i = 0; i < palavras.length; i++) {
+    const chave = removerAcentos(palavras[i].toLowerCase()).replace(/[^a-z0-9]/g, "");
+    if (PROCEDURE_KEYWORDS.has(chave)) return palavras.slice(0, i).join(" ").trim();
+  }
+  return nome;
+};
+
+// Corta no primeiro " - "/"- " (com espaço depois do traço) — preserva nomes com
+// hífen colado tipo "Maria-Clara". Ex: "Ieda- caiu obturação" -> "Ieda".
+const cortarEmTraco = (nome) => {
+  const idx = nome.search(/\s*[-–]\s+/);
+  return idx === -1 ? nome : nome.slice(0, idx);
+};
+
 // Extrai o nome do paciente do título do evento da agenda.
-// Formato real usado pela clínica: "Nome" ou "Nome, procedimento" (ex: "Natalia Sfredo, limpeza").
+// Formato real usado pela clínica: "Nome" ou "Nome, procedimento" (ex: "Natalia Sfredo, limpeza"),
+// às vezes com traço ("Nome - procedimento") ou procedimento grudado ("Nome procedimento").
 // Também aceita os formatos antigos "Consulta – Nome" / "Retorno – Nome", se existirem.
 const extrairNomePaciente = (titulo) => {
   if (!titulo) return null;
@@ -45,10 +78,15 @@ const extrairNomePaciente = (titulo) => {
     titulo.match(/avaliação\s*[–\-]\s*(.+)/i)||
     titulo.match(/avaliacao\s*[–\-]\s*(.+)/i);
 
-  // Caso geral: tudo antes da primeira vírgula é o nome; o resto é o procedimento
-  const candidato = comPrefixo
-    ? comPrefixo[1].trim().replace(/\s*\(.*\)\s*$/, "").trim()
-    : titulo.split(",")[0].trim();
+  let candidato;
+  if (comPrefixo) {
+    candidato = comPrefixo[1].trim().replace(/\s*\(.*\)\s*$/, "").trim();
+  } else {
+    candidato = titulo.split(",")[0];
+    candidato = cortarEmTraco(candidato);
+    candidato = truncarNoProcedimento(candidato);
+  }
+  candidato = candidato.trim();
 
   return isNomeValido(candidato) ? candidato : null;
 };
