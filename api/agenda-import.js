@@ -16,6 +16,8 @@ const BLACKLIST_NOMES = new Set([
   "aniversário","aniversario","entrega","buscar","ligar","ligar para",
   "reunião de","reuniao de","visita","visita técnica","visita tecnica",
   "chamar","pagar","confirmar","agendar","marcar","cancelar","reagendar","bloqueado","bloqueio",
+  "mensagem","whatsapp","wpp","exame","orçamento","orcamento","financeiro",
+  "cobrança","cobranca","obs","observação","observacao","fechado","feriado nacional",
 ]);
 
 const isNomeValido = (nome) => {
@@ -26,7 +28,29 @@ const isNomeValido = (nome) => {
   if (BLACKLIST_NOMES.has(base) || BLACKLIST_NOMES.has(primeiraPalavra)) return false;
   // Rejeita se parecer número/código
   if (/^\d/.test(base)) return false;
+  // Nome de paciente real começa com maiúscula (filtra frases tipo "mensagem pós cirurgia")
+  if (!/^[A-ZÀ-Ú]/.test(nome.trim())) return false;
   return true;
+};
+
+// Extrai o nome do paciente do título do evento da agenda.
+// Formato real usado pela clínica: "Nome" ou "Nome, procedimento" (ex: "Natalia Sfredo, limpeza").
+// Também aceita os formatos antigos "Consulta – Nome" / "Retorno – Nome", se existirem.
+const extrairNomePaciente = (titulo) => {
+  if (!titulo) return null;
+
+  const comPrefixo =
+    titulo.match(/consulta\s*[–\-]\s*(.+)/i) ||
+    titulo.match(/retorno\s*[–\-]\s*(.+)/i)  ||
+    titulo.match(/avaliação\s*[–\-]\s*(.+)/i)||
+    titulo.match(/avaliacao\s*[–\-]\s*(.+)/i);
+
+  // Caso geral: tudo antes da primeira vírgula é o nome; o resto é o procedimento
+  const candidato = comPrefixo
+    ? comPrefixo[1].trim().replace(/\s*\(.*\)\s*$/, "").trim()
+    : titulo.split(",")[0].trim();
+
+  return isNomeValido(candidato) ? candidato : null;
 };
 
 const extrairHora = (dateTime) => {
@@ -123,21 +147,7 @@ export default async function handler(req, res) {
 
         for (const ev of evData.items) {
           const titulo = ev.summary || "";
-
-          // Extrai nome do padrão "Consulta – Nome" ou "Retorno – Nome"
-          const match =
-            titulo.match(/consulta\s*[–\-]\s*(.+)/i) ||
-            titulo.match(/retorno\s*[–\-]\s*(.+)/i)  ||
-            titulo.match(/avaliação\s*[–\-]\s*(.+)/i)||
-            titulo.match(/avaliacao\s*[–\-]\s*(.+)/i)||
-            // Fallback: pega tudo antes do primeiro traço/parêntese
-            titulo.match(/^(.+?)\s*[-–(]/i);
-
-          const nomeBruto = match
-            ? match[1].trim().replace(/\s*\(.*\)\s*$/, "").trim()
-            : null;
-
-          const nomePaciente = isNomeValido(nomeBruto) ? nomeBruto : null;
+          const nomePaciente = extrairNomePaciente(titulo);
 
           const data = ev.start?.date || ev.start?.dateTime?.split("T")[0] || null;
           const hora = extrairHora(ev.start?.dateTime);
