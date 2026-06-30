@@ -7,7 +7,7 @@ const SUPABASE_URL = "https://swwxrybldjfhicdurnch.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3d3hyeWJsZGpmaGljZHVybmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNzAzMzMsImV4cCI6MjA5Mjk0NjMzM30.ba1232EYersCtHILmSm5pv4Sb6fgtMUuaNyDC07AjDY";
 
 const DRY = process.argv.includes("--dry");
-const EXCLUIR = new Set(["cleber"]); // lembretes pessoais, não pacientes
+const EXCLUIR = new Set(["cleber", "sobrancelha"]); // lembretes pessoais / blocos sem nome, não pacientes
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const hoje = new Date().toLocaleDateString("pt-BR");
