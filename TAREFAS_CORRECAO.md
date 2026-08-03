@@ -1,4 +1,4 @@
-# 🔧 Trilha de Correções — Auditoria completa de 02/07/2026
+# 🔧 Trilha de Correções — Auditoria completa de 03/08/2026
 
 **Origem:** auditoria com 4 agentes paralelos (App.jsx núcleo / Agenda+Financeiro+Caixa / Odontograma+dashboards / APIs+segurança), achados verificados. 44 achados brutos → 35 tarefas deduplicadas.
 
@@ -53,7 +53,7 @@
 
 ### T07 🔴 [CLEBER] RLS aberto: qualquer um lê/edita/apaga todos os prontuários
 - **Evidência:** `scripts/importar-pacientes.mjs` e `limpar-importacao.mjs` fazem select/insert/update/delete com anon key SEM login — e funcionaram em produção. Logo o role `anon` tem acesso total a `patients` (e `agenda`, `user_events`).
-- **⚠️ DECISÃO ESTRATÉGICA (02/07):** fazer o RLS já pensando em multi-clínica — adicionar coluna `clinic_id` (default `'eyng'`) nas tabelas `patients`/`agenda` junto com o RLS, pra não refazer tudo quando entrar a 2ª clínica (ver ESTRATEGIA_B2B_GOOGLE_MAPS.md na branch claude/google-maps-b2b-strategy-c1elh3).
+- **⚠️ DECISÃO ESTRATÉGICA (03/08):** fazer o RLS já pensando em multi-clínica — adicionar coluna `clinic_id` (default `'eyng'`) nas tabelas `patients`/`agenda` junto com o RLS, pra não refazer tudo quando entrar a 2ª clínica (ver ESTRATEGIA_B2B_GOOGLE_MAPS.md na branch claude/google-maps-b2b-strategy-c1elh3).
 - **Fix (preparar e entregar ao Cleber):** SQL pra rodar no SQL Editor do Supabase: habilitar RLS em `patients`, `agenda`, `user_events` com políticas exigindo `authenticated`. Ex:
   ```sql
   alter table patients enable row level security;
