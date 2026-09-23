@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang='pt-BR'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<title>Roteiro de Testes — Eyng Odontologia</title>
+<style>
+  body { font-family: 'Segoe UI', sans-serif; max-width: 720px; margin: 0 auto; padding: 24px 20px; color: #2d2d2d; background: #faf8f9; }
+  h1 { color: #8b3458; font-size: 22px; border-bottom: 3px solid #c45f82; padding-bottom: 10px; }
+  h2 { color: #8b3458; font-size: 17px; margin-top: 32px; background: #f3e6ec; padding: 8px 14px; border-radius: 8px; }
+  h3 { color: #555; font-size: 15px; }
+  code { background: #f0e8ed; padding: 2px 7px; border-radius: 4px; font-size: 13px; color: #8b3458; }
+  ul, ol { padding-left: 22px; line-height: 1.8; }
+  li { margin-bottom: 4px; }
+  blockquote { background: #fdf6f9; border-left: 4px solid #c45f82; margin: 12px 0; padding: 10px 16px; border-radius: 0 8px 8px 0; font-style: italic; color: #555; }
+  strong { color: #8b3458; }
+  hr { border: none; border-top: 1px solid #e8d5de; margin: 24px 0; }
+  p { line-height: 1.7; }
+  .badge-new { background: #16a34a; color: white; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; margin-left: 6px; }
+  a { color: #8b3458; }
+</style>
+</head>
+<body>
+<h1>Roteiro de Testes — Eyng Odontologia</h1>
+<strong>Para:</strong> Dra. Caroline / Dr. João  
+<strong>Versão:</strong> 15/05/2026  
+<strong>App:</strong> https://eyng-odontologia.vercel.app</p><p><hr></p><p><h2>Como entrar no app</h2></p><p><ul><li>Abre o link acima no celular ou computador</li>
+<li>Faz login com as credenciais da clínica</li>
+<li>Você cai direto na tela de <strong>Retornos</strong></li>
+</ul>
+<hr></p><p><h2>Teste 1 — Painel inicial (Dashboard)</h2></p><p><strong>O que aparece:</strong>
+<ul><li>Total de pacientes cadastrados</li>
+<li>Pacientes com retorno atrasado (vermelho)</li>
+<li>Inadimplentes</li>
+<li>Valor recebido no mês</li>
+<li>Valor a receber</li>
+</ul>
+<strong>O que testar:</strong>
+<ul><li>Confirmar se os números batem com a realidade da clínica</li>
+<li>Clicar nos cards para navegar</li>
+</ul>
+<hr></p><p><h2>Teste 2 — Retornos</h2></p><p><strong>Onde:</strong> aba "🔔 Retornos" (aparece ao entrar)</p><p><strong>O que aparece:</strong>
+<ul><li>Pacientes com retorno vencido (vermelho, seção de cima)</li>
+<li>Pacientes com retorno nos próximos 30 dias (seção de baixo)</li>
+<li>Para cada um: botão WhatsApp, Ligar, Agendar, Ver ficha</li>
+</ul>
+<strong>O que testar:</strong>
+<ul><li>☐ Clicar em <strong>WhatsApp</strong> → deve abrir o WhatsApp com a mensagem pronta para o número do paciente</li>
+<li>☐ Clicar em <strong>Ligar</strong> → deve iniciar ligação (no celular)</li>
+<li>☐ Clicar em <strong>Ver ficha →</strong> → deve abrir a ficha completa do paciente</li>
+</ul>
+<hr></p><p><h2>Teste 3 — Ficha do paciente</h2></p><p><strong>Como chegar:</strong> Retornos → Ver ficha → (ou aba Pacientes → escolher paciente)</p><p><strong>O que aparece no topo:</strong>
+<ul><li>Nome, especialidade, dentista responsável</li>
+<li>Telefone e data de nascimento</li>
+<li>Alergias (clica no ✕ para remover; clica em "+ alergia" para adicionar)</li>
+<li>Status financeiro (EM DIA / PENDENTE — clica para alternar)</li>
+</ul>
+<strong>O que testar:</strong>
+<ul><li>☐ Adicionar uma alergia fictícia e confirmar que aparece</li>
+<li>☐ Remover a alergia</li>
+<li>☐ Alternar o status financeiro e ver se muda a cor</li>
+</ul>
+<hr></p><p><h2>Teste 4 — Registrar por Voz (IA)</h2></p><p><strong>Onde:</strong> dentro da ficha do paciente, botão "🎙 Registrar por Voz"</p><p><strong>O que faz:</strong> a dentista fala em voz alta o que foi feito na consulta. A IA da Claude interpreta e preenche automaticamente os campos: procedimento, próximo retorno, observações, alergias.</p><p><strong>Como testar:</strong>
+<ul><li>Abre a ficha de um paciente</li>
+<li>Clica em "🎙 Registrar por Voz"</li>
+<li>Clica no microfone e fala algo como:</li>
+</ul>   > *"Paciente fez profilaxia hoje, voltou bem. Próximo retorno em 3 meses. Ela tem alergia a dipirona."*
+<ul><li>Clica em "Interpretar"</li>
+<li>Confirma os campos que apareceram preenchidos</li>
+<li>Clica em "Salvar" para aplicar</li>
+</ul>
+<strong>Observações:</strong>
+<ul><li>Funciona melhor no celular (microfone mais sensível)</li>
+<li>A IA corrige erros de pronúncia de termos odontológicos automaticamente</li>
+<li>Falar de forma natural, como se fosse um áudio de WhatsApp</li>
+</ul>
+<hr></p><p><h2>Teste 5 — Confirmar retorno via WhatsApp</h2></p><p><strong>Onde:</strong> seção "Próximo Retorno" dentro da ficha do paciente</p><p><strong>O que aparece:</strong> data e hora do retorno + botão verde "Confirmar via WhatsApp"</p><p><strong>O que testar:</strong>
+<ul><li>Abre ficha de paciente com retorno marcado</li>
+<li>Clica em <strong>"✉ Confirmar via WhatsApp"</strong></li>
+<li>Deve abrir o WhatsApp com mensagem já escrita confirmando a consulta</li>
+<li>Confere se o nome e a data estão corretos na mensagem</li>
+</ul>
+<hr></p><p><h2>Teste 6 — Criar evento no Google Agenda <span class="badge-new">NOVO</span></h2></p><p><strong>Onde:</strong> seção "Próximo Retorno" dentro da ficha do paciente</p><p><strong>O que faz:</strong> cria automaticamente um evento no Google Agenda da clínica (conta <code>dr.joaobeno@gmail.com</code>) com o nome do paciente, horário, plano de tratamento e lembretes de 1h antes e 1 dia antes.</p><p><strong>Como testar:</strong>
+<ul><li>Abre ficha de paciente com retorno marcado</li>
+<li>Na seção "Próximo Retorno", clica em <strong>"🗓 Criar no Google Agenda"</strong></li>
+<li>O botão deve virar verde <strong>"✅ Criado!"</strong> em alguns segundos</li>
+<li>Abre o Google Agenda da clínica e vai até a data do retorno</li>
+<li>Confirma que aparece o evento: <strong>"Consulta – [Nome do Paciente]"</strong></li>
+</ul>
+<strong>O que deve ter no evento:</strong>
+<ul><li>Título: "Consulta – [nome]"</li>
+<li>Horário correto</li>
+<li>Descrição: plano de tratamento do paciente</li>
+<li>Lembrete: 1 hora antes</li>
+<li>Lembrete: 1 dia antes</li>
+</ul>
+<strong>Se aparecer "❌ Erro":</strong> avisar o Cleber com print da tela.</p><p><hr></p><p><h2>Teste 7 — Registrar Procedimento</h2></p><p><strong>Onde:</strong> dentro da ficha → botão "+ Procedimento"</p><p><strong>O que testar:</strong>
+<ul><li>Clica em "+ Procedimento"</li>
+<li>Preenche o que foi feito e a data</li>
+<li>Salva</li>
+<li>Confirma que aparece no histórico de procedimentos abaixo</li>
+</ul>
+<hr></p><p><h2>Teste 8 — Receituário</h2></p><p><strong>Onde:</strong> ficha do paciente → aba "Receituário" (ícone de pergaminho)</p><p><strong>O que testar:</strong>
+<ul><li>Verificar se o template do receituário carrega corretamente</li>
+<li>Preencher um medicamento de teste</li>
+<li>Confirmar visualização/impressão</li>
+</ul>
+<hr></p><p><h2>Teste 9 — Odontograma</h2></p><p><strong>Onde:</strong> ficha do paciente → aba "Odontograma" (ícone de dente)</p><p><strong>O que testar:</strong>
+<ul><li>Clicar nos dentes e verificar se marcam corretamente</li>
+<li>Verificar se as marcações ficam salvas ao sair e voltar</li>
+</ul>
+<hr></p><p><h2>O que reportar ao Cleber</h2></p><p>Para cada teste, anotar:
+<ul><li>✅ Funcionou normal</li>
+<li>⚠️ Funcionou mas tem algo estranho: descrever o quê</li>
+<li>❌ Não funcionou: tirar print e descrever o que aconteceu</li>
+</ul>
+<strong>Canal preferido:</strong> WhatsApp do Cleber ou áudio — ele processa tudo.</p><p><hr></p><p>*Documento gerado em 15/05/2026*
+
+</body>
+</html>
